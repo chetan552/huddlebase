@@ -231,296 +231,296 @@ export default function SchedulePage() {
                             {day}
                         </div>
                     ))}
-
-                    {/* Calendar Cells */}
-                    <div className="grid-calendar">
-                        {calendarDays.map((day, i) => {
-                            if (day === null) {
-                                return <div key={`empty-${i}`} className="hide-mobile" style={{ minHeight: '100px' }} />;
-                            }
-                            const dayEvents = getEventsForDay(day);
-                            const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
-
-                            return (
-                                <div
-                                    key={day}
-                                    onClick={() => {
-                                        if (!isStaff) return;
-                                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                        setSelectedDate(dateStr);
-                                        setFormData((prev) => ({ ...prev, startTime: `${dateStr}T16:00` }));
-                                        setShowModal(true);
-                                    }}
-                                    className="calendar-day-cell"
-                                    style={{
-                                        padding: '0.5rem',
-                                        background: isToday ? 'rgba(59, 130, 246, 0.08)' : 'var(--surface-800)',
-                                        border: isToday ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid var(--surface-700)',
-                                        borderRadius: '0.5rem',
-                                        cursor: isStaff ? 'pointer' : 'default',
-                                        transition: 'all 0.2s',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '4px'
-                                    }}
-                                >
-                                    <div className="calendar-day-header" style={{
-                                        fontSize: '0.85rem',
-                                        fontWeight: isToday ? 700 : 500,
-                                        color: isToday ? 'var(--primary-400)' : 'var(--text-primary)',
-                                        marginBottom: '0.25rem',
-                                    }}>
-                                        {day}
-                                    </div>
-                                    <div className="calendar-day-events">
-                                        {dayEvents.slice(0, 3).map((ev) => (
-                                            <div
-                                                key={ev.id}
-                                                onClick={(e) => handleEventClick(e, ev)}
-                                                style={{
-                                                    fontSize: '0.65rem',
-                                                    padding: '2px 4px',
-                                                    borderRadius: '3px',
-                                                    background: `${typeColors[ev.type]}20`,
-                                                    color: typeColors[ev.type],
-                                                    whiteSpace: 'nowrap',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    borderLeft: `2px solid ${typeColors[ev.type]}`,
-                                                    zIndex: 10,
-                                                }}
-                                            >
-                                                {ev.title}
-                                            </div>
-                                        ))}
-                                        {dayEvents.length > 3 && (
-                                            <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>
-                                                +{dayEvents.length - 3} more
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Legend */}
-                    <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem', justifyContent: 'center' }}>
-                        {Object.entries(typeColors).map(([type, color]) => (
-                            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
-                                    {type.toLowerCase()}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
                 </div>
 
-                {/* Create Event Modal */}
-                {showModal && (
-                    <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                        <div className="modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h2 className="modal-title">New Event</h2>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+                {/* Calendar Cells */}
+                <div className="grid-calendar">
+                    {calendarDays.map((day, i) => {
+                        if (day === null) {
+                            return <div key={`empty-${i}`} className="hide-mobile" style={{ minHeight: '100px' }} />;
+                        }
+                        const dayEvents = getEventsForDay(day);
+                        const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+
+                        return (
+                            <div
+                                key={day}
+                                onClick={() => {
+                                    if (!isStaff) return;
+                                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                    setSelectedDate(dateStr);
+                                    setFormData((prev) => ({ ...prev, startTime: `${dateStr}T16:00` }));
+                                    setShowModal(true);
+                                }}
+                                className="calendar-day-cell"
+                                style={{
+                                    padding: '0.5rem',
+                                    background: isToday ? 'rgba(59, 130, 246, 0.08)' : 'var(--surface-800)',
+                                    border: isToday ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid var(--surface-700)',
+                                    borderRadius: '0.5rem',
+                                    cursor: isStaff ? 'pointer' : 'default',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '4px'
+                                }}
+                            >
+                                <div className="calendar-day-header" style={{
+                                    fontSize: '0.85rem',
+                                    fontWeight: isToday ? 700 : 500,
+                                    color: isToday ? 'var(--primary-400)' : 'var(--text-primary)',
+                                    marginBottom: '0.25rem',
+                                }}>
+                                    {day}
+                                </div>
+                                <div className="calendar-day-events">
+                                    {dayEvents.slice(0, 3).map((ev) => (
+                                        <div
+                                            key={ev.id}
+                                            onClick={(e) => handleEventClick(e, ev)}
+                                            style={{
+                                                fontSize: '0.65rem',
+                                                padding: '2px 4px',
+                                                borderRadius: '3px',
+                                                background: `${typeColors[ev.type]}20`,
+                                                color: typeColors[ev.type],
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                borderLeft: `2px solid ${typeColors[ev.type]}`,
+                                                zIndex: 10,
+                                            }}
+                                        >
+                                            {ev.title}
+                                        </div>
+                                    ))}
+                                    {dayEvents.length > 3 && (
+                                        <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>
+                                            +{dayEvents.length - 3} more
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <form onSubmit={handleCreate}>
-                                <div className="modal-body">
+                        );
+                    })}
+                </div>
+
+                {/* Legend */}
+                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem', justifyContent: 'center' }}>
+                    {Object.entries(typeColors).map(([type, color]) => (
+                        <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                                {type.toLowerCase()}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Create Event Modal */}
+            {showModal && (
+                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">New Event</h2>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+                        </div>
+                        <form onSubmit={handleCreate}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label className="form-label">Event Title</label>
+                                    <input
+                                        className="form-input"
+                                        placeholder="e.g., Practice Session"
+                                        value={formData.title}
+                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div className="form-group">
-                                        <label className="form-label">Event Title</label>
+                                        <label className="form-label">Type</label>
+                                        <select
+                                            className="form-input form-select"
+                                            value={formData.type}
+                                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                        >
+                                            <option value="PRACTICE">Practice</option>
+                                            <option value="GAME">Game</option>
+                                            <option value="MEETING">Meeting</option>
+                                            <option value="OTHER">Other</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Team</label>
+                                        <select
+                                            className="form-input form-select"
+                                            value={formData.teamId}
+                                            onChange={(e) => setFormData({ ...formData, teamId: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Select team</option>
+                                            {teams.map((t) => (
+                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Location</label>
+                                    <input
+                                        className="form-input"
+                                        placeholder="e.g., City Sports Complex"
+                                        value={formData.location}
+                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div className="form-group">
+                                        <label className="form-label">Start Time</label>
                                         <input
+                                            type="datetime-local"
                                             className="form-input"
-                                            placeholder="e.g., Practice Session"
-                                            value={formData.title}
-                                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                            value={formData.startTime}
+                                            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                                             required
                                         />
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                        <div className="form-group">
-                                            <label className="form-label">Type</label>
-                                            <select
-                                                className="form-input form-select"
-                                                value={formData.type}
-                                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                            >
-                                                <option value="PRACTICE">Practice</option>
-                                                <option value="GAME">Game</option>
-                                                <option value="MEETING">Meeting</option>
-                                                <option value="OTHER">Other</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group">
-                                            <label className="form-label">Team</label>
-                                            <select
-                                                className="form-input form-select"
-                                                value={formData.teamId}
-                                                onChange={(e) => setFormData({ ...formData, teamId: e.target.value })}
-                                                required
-                                            >
-                                                <option value="">Select team</option>
-                                                {teams.map((t) => (
-                                                    <option key={t.id} value={t.id}>{t.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
                                     <div className="form-group">
-                                        <label className="form-label">Location</label>
+                                        <label className="form-label">End Time</label>
                                         <input
+                                            type="datetime-local"
                                             className="form-input"
-                                            placeholder="e.g., City Sports Complex"
-                                            value={formData.location}
-                                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                            value={formData.endTime}
+                                            onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                                         />
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                        <div className="form-group">
-                                            <label className="form-label">Start Time</label>
-                                            <input
-                                                type="datetime-local"
-                                                className="form-input"
-                                                value={formData.startTime}
-                                                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label className="form-label">End Time</label>
-                                            <input
-                                                type="datetime-local"
-                                                className="form-input"
-                                                value={formData.endTime}
-                                                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
                                 </div>
-                                <div className="modal-footer">
-                                    <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-                                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                                        {loading ? 'Creating...' : 'Create Event'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
-                {/* RSVP Detail Modal */}
-                {selectedEventRsvps && (
-                    <div className="modal-overlay" onClick={() => setSelectedEventRsvps(null)}>
-                        <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-                            <div className="modal-header" style={{ alignItems: 'flex-start' }}>
-                                <div>
-                                    <h2 className="modal-title">{selectedEventRsvps.title}</h2>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                        {new Date(selectedEventRsvps.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                                    </p>
-                                    <div style={{
-                                        fontSize: '0.75rem',
-                                        padding: '2px 8px',
-                                        borderRadius: '4px',
-                                        background: `${typeColors[selectedEventRsvps.type]}20`,
-                                        color: typeColors[selectedEventRsvps.type],
-                                        display: 'inline-block',
-                                        marginTop: '0.5rem'
-                                    }}>
-                                        {selectedEventRsvps.type}
-                                    </div>
-                                </div>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setSelectedEventRsvps(null)}>✕</button>
                             </div>
-                            <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-                                {/* User RSVP Controls */}
-                                {!isStaff && (
-                                    <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--surface-600)' }}>
-                                        {isParent && children.length > 0 ? (
-                                            <>
-                                                <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>RSVP for your child</h3>
-                                                {children.length > 1 && (
-                                                    <select
-                                                        className="form-input form-select"
-                                                        style={{ marginBottom: '0.75rem', fontSize: '0.85rem' }}
-                                                        value={selectedChildId || ''}
-                                                        onChange={(e) => setSelectedChildId(e.target.value)}
-                                                    >
-                                                        {children.map((c) => (
-                                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                                        ))}
-                                                    </select>
-                                                )}
-                                                {children.length === 1 && (
-                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.75rem', fontWeight: 600 }}>
-                                                        {children[0].name}
-                                                    </div>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>Your RSVP</h3>
-                                        )}
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            {['GOING', 'PENDING', 'NOT_GOING'].map((status) => {
-                                                const rsvpTargetId = isParent ? selectedChildId : user?.id;
-                                                const isSelected = rsvps.find(r => r.userId === rsvpTargetId)?.status === status;
-                                                const count = rsvps.filter(r => r.status === status).length;
-                                                return (
-                                                    <button
-                                                        key={status}
-                                                        onClick={() => handleRsvp(status)}
-                                                        style={{
-                                                            flex: 1,
-                                                            padding: '0.5rem',
-                                                            borderRadius: '0.5rem',
-                                                            fontSize: '0.8rem',
-                                                            fontWeight: 600,
-                                                            border: isSelected ? `1px solid ${statusColors[status]}` : '1px solid var(--surface-600)',
-                                                            background: isSelected ? `${statusColors[status]}20` : 'var(--surface-700)',
-                                                            color: isSelected ? statusColors[status] : 'var(--text-primary)',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                    >
-                                                        {status === 'NOT_GOING' ? 'Not Going' : status === 'PENDING' ? 'Maybe' : 'Going'} ({count})
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                                    {loading ? 'Creating...' : 'Create Event'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* RSVP Detail Modal */}
+            {selectedEventRsvps && (
+                <div className="modal-overlay" onClick={() => setSelectedEventRsvps(null)}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <div className="modal-header" style={{ alignItems: 'flex-start' }}>
+                            <div>
+                                <h2 className="modal-title">{selectedEventRsvps.title}</h2>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                    {new Date(selectedEventRsvps.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                </p>
+                                <div style={{
+                                    fontSize: '0.75rem',
+                                    padding: '2px 8px',
+                                    borderRadius: '4px',
+                                    background: `${typeColors[selectedEventRsvps.type]}20`,
+                                    color: typeColors[selectedEventRsvps.type],
+                                    display: 'inline-block',
+                                    marginTop: '0.5rem'
+                                }}>
+                                    {selectedEventRsvps.type}
+                                </div>
+                            </div>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setSelectedEventRsvps(null)}>✕</button>
+                        </div>
+                        <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                            {/* User RSVP Controls */}
+                            {!isStaff && (
+                                <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--surface-600)' }}>
+                                    {isParent && children.length > 0 ? (
+                                        <>
+                                            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>RSVP for your child</h3>
+                                            {children.length > 1 && (
+                                                <select
+                                                    className="form-input form-select"
+                                                    style={{ marginBottom: '0.75rem', fontSize: '0.85rem' }}
+                                                    value={selectedChildId || ''}
+                                                    onChange={(e) => setSelectedChildId(e.target.value)}
+                                                >
+                                                    {children.map((c) => (
+                                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                            {children.length === 1 && (
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.75rem', fontWeight: 600 }}>
+                                                    {children[0].name}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>Your RSVP</h3>
+                                    )}
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        {['GOING', 'PENDING', 'NOT_GOING'].map((status) => {
+                                            const rsvpTargetId = isParent ? selectedChildId : user?.id;
+                                            const isSelected = rsvps.find(r => r.userId === rsvpTargetId)?.status === status;
+                                            const count = rsvps.filter(r => r.status === status).length;
+                                            return (
+                                                <button
+                                                    key={status}
+                                                    onClick={() => handleRsvp(status)}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '0.5rem',
+                                                        borderRadius: '0.5rem',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: 600,
+                                                        border: isSelected ? `1px solid ${statusColors[status]}` : '1px solid var(--surface-600)',
+                                                        background: isSelected ? `${statusColors[status]}20` : 'var(--surface-700)',
+                                                        color: isSelected ? statusColors[status] : 'var(--text-primary)',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    {status === 'NOT_GOING' ? 'Not Going' : status === 'PENDING' ? 'Maybe' : 'Going'} ({count})
+                                                </button>
+                                            );
+                                        })}
                                     </div>
-                                )}
+                                </div>
+                            )}
 
-                                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Team RSVPs</h3>
-                                {loadingRsvps ? (
-                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading...</div>
-                                ) : rsvps.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No RSVPs yet.</div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                        {rsvps.map((rsvp) => (
-                                            <div key={rsvp.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', background: 'var(--surface-700)', borderRadius: '0.5rem' }}>
-                                                <div className="avatar avatar-sm" style={{ background: getAvatarColor(rsvp.userName) }}>
-                                                    {getInitials(rsvp.userName)}
-                                                </div>
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{rsvp.userName}</div>
-                                                    {rsvp.note && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>&quot;{rsvp.note}&quot;</div>}
-                                                </div>
-                                                <div style={{
-                                                    fontSize: '0.75rem', fontWeight: 600, padding: '2px 8px', borderRadius: '1rem',
-                                                    color: statusColors[rsvp.status] || 'var(--text-secondary)',
-                                                    background: `${statusColors[rsvp.status] || 'var(--surface-600)'}20`,
-                                                }}>
-                                                    {rsvp.status.replace('_', ' ')}
-                                                </div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Team RSVPs</h3>
+                            {loadingRsvps ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading...</div>
+                            ) : rsvps.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No RSVPs yet.</div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {rsvps.map((rsvp) => (
+                                        <div key={rsvp.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', background: 'var(--surface-700)', borderRadius: '0.5rem' }}>
+                                            <div className="avatar avatar-sm" style={{ background: getAvatarColor(rsvp.userName) }}>
+                                                {getInitials(rsvp.userName)}
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{rsvp.userName}</div>
+                                                {rsvp.note && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>&quot;{rsvp.note}&quot;</div>}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.75rem', fontWeight: 600, padding: '2px 8px', borderRadius: '1rem',
+                                                color: statusColors[rsvp.status] || 'var(--text-secondary)',
+                                                background: `${statusColors[rsvp.status] || 'var(--surface-600)'}20`,
+                                            }}>
+                                                {rsvp.status.replace('_', ' ')}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
