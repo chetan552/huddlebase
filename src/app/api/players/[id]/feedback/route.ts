@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = getSessionUser(req);
@@ -12,7 +12,7 @@ export async function GET(
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        const playerId = params.id;
+        const { id: playerId } = await params;
         const feedback = await prisma.playerFeedback.findMany({
             where: { playerId },
             include: { coach: { select: { name: true, avatar: true } } },
@@ -28,7 +28,7 @@ export async function GET(
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = getSessionUser(req);
@@ -36,7 +36,7 @@ export async function POST(
             return NextResponse.json({ success: false, error: 'Unauthorized. Coaches only.' }, { status: 403 });
         }
 
-        const playerId = params.id;
+        const { id: playerId } = await params;
         const body = await req.json();
         const { effortRating, note } = body;
 

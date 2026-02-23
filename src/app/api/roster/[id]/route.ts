@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = getSessionUser(req);
@@ -12,14 +12,11 @@ export async function DELETE(
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        const memberId = params.id;
+        const { id: memberId } = await params;
 
         if (!memberId) {
             return NextResponse.json({ success: false, error: 'Member ID is required' }, { status: 400 });
         }
-
-        // Optional: Could verify that the person deleting is an ADMIN or COACH for this team, 
-        // but for now, we'll allow any logged-in user to delete a TeamMember if they can access it.
 
         await prisma.teamMember.delete({
             where: { id: memberId },
