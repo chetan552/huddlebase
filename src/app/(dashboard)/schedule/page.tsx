@@ -97,6 +97,13 @@ export default function SchedulePage() {
         }
     }, []);
 
+    useEffect(() => {
+        // Auto-scroll to today's date
+        setTimeout(() => {
+            document.getElementById('today-cell')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }, [currentDate]);
+
     const fetchRsvps = async (eventId: string) => {
         setLoadingRsvps(true);
         try {
@@ -239,6 +246,7 @@ export default function SchedulePage() {
                         return (
                             <div
                                 key={day}
+                                id={isToday ? "today-cell" : undefined}
                                 onClick={() => {
                                     if (!isStaff) return;
                                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
