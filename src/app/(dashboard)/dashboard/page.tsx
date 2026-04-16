@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
+import { UserPlus, Calendar, CheckCircle2, Banknote, Megaphone, Users, MessageCircle, Activity, AlertTriangle } from 'lucide-react';
 
 import ParentDashboard from './components/ParentDashboard';
 import PlayerDashboard from './components/PlayerDashboard';
@@ -92,11 +93,11 @@ function AdminDashboard({ user }: { user: any }) {
                 pendingPayments: 5,
             },
             recentActivity: [
-                { id: '1', icon: '👤', text: 'Sarah Johnson joined Thunder FC', time: '2 hours ago' },
-                { id: '2', icon: '📅', text: 'Practice scheduled for Saturday 10AM', time: '3 hours ago' },
-                { id: '3', icon: '✅', text: '12 players confirmed for Friday game', time: '5 hours ago' },
-                { id: '4', icon: '💵', text: 'Payment received from Mike Davis', time: '1 day ago' },
-                { id: '5', icon: '📢', text: 'New announcement posted in Lightning Squad', time: '1 day ago' },
+                { id: '1', icon: 'user-plus', text: 'Sarah Johnson joined Thunder FC', time: '2 hours ago' },
+                { id: '2', icon: 'calendar', text: 'Practice scheduled for Saturday 10AM', time: '3 hours ago' },
+                { id: '3', icon: 'check', text: '12 players confirmed for Friday game', time: '5 hours ago' },
+                { id: '4', icon: 'banknote', text: 'Payment received from Mike Davis', time: '1 day ago' },
+                { id: '5', icon: 'megaphone', text: 'New announcement posted in Lightning Squad', time: '1 day ago' },
             ],
             upcomingEvents: [
                 { id: '1', title: 'Practice Session', type: 'PRACTICE', date: 'Tomorrow, 4:00 PM', team: 'Thunder FC', rsvpCount: 14 },

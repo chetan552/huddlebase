@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { SPORTS } from '@/lib/constants';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface Team {
     id: string;
@@ -22,6 +23,7 @@ export default function TeamsPage() {
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({ name: '', sport: 'Basketball', season: '', color: '#3b82f6' });
     const [loading, setLoading] = useState(false);
+    const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
     const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [logoUploading, setLogoUploading] = useState(false);
@@ -78,24 +80,17 @@ export default function TeamsPage() {
     const handleDeleteTeam = async (e: React.MouseEvent, id: string, name: string) => {
         e.preventDefault();
         e.stopPropagation();
+        setPendingDelete({ id, name });
+    };
 
-        if (!window.confirm(`Are you sure you want to completely delete "${name}"? This action cannot be undone and will remove all members, events, and history.`)) {
-            return;
-        }
-
-        try {
-            const res = await fetch(`/api/teams/${id}`, {
-                method: 'DELETE',
-            });
-            const data = await res.json();
-            if (data.success) {
-                fetchTeams();
-            } else {
-                alert(data.error || 'Failed to delete team.');
-            }
-        } catch (err) {
-            console.error('Failed to delete team:', err);
-            alert('A network error occurred while deleting the team.');
+    const confirmDeleteTeam = async () => {
+        if (!pendingDelete) return;
+        const res = await fetch(`/api/teams/${pendingDelete.id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            fetchTeams();
+        } else {
+            throw new Error(data.error || 'Failed to delete team.');
         }
     };
 
@@ -140,7 +135,7 @@ export default function TeamsPage() {
                                 <button
                                     className="btn btn-ghost btn-icon"
                                     style={{ position: 'absolute', top: '1rem', right: '1rem', color: 'var(--danger-400)', zIndex: 10 }}
-                                    title="Delete Team"
+                                    aria-label="Delete team"
                                     onClick={(e) => handleDeleteTeam(e, team.id, team.name)}
                                 >
                                     🗑️
@@ -283,6 +278,17 @@ export default function TeamsPage() {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {pendingDelete && (
+                <ConfirmDialog
+                    title="Delete Team"
+                    description={`Are you sure you want to completely delete "${pendingDelete.name}"? This cannot be undone and will remove all members, events, and history.`}
+                    confirmLabel="Delete"
+                    tone="danger"
+                    onConfirm={confirmDeleteTeam}
+                    onClose={() => setPendingDelete(null)}
+                />
             )}
         </div>
     );

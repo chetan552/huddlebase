@@ -15,10 +15,10 @@
 
 | Layer | Technology |
 |-------|-----------|
-| **Web App** | Next.js 14, TypeScript, React |
-| **Mobile App** | React Native (Expo), TypeScript |
-| **Database** | SQLite (Prisma ORM) |
-| **Auth** | Cookie sessions (web) + Bearer tokens (mobile) |
+| **Web App** | Next.js 16, TypeScript, React 19 |
+| **Mobile App** | React Native (Expo 54), TypeScript |
+| **Database** | PostgreSQL (Supabase) via Prisma ORM |
+| **Auth** | HTTP-only cookie sessions (web) + Bearer tokens (mobile) |
 | **Styling** | Custom CSS with glassmorphism dark theme |
 
 ## Project Structure
@@ -53,6 +53,7 @@ TeamManagementApp/
 
 - Node.js 18+
 - npm
+- PostgreSQL database (Supabase free tier works)
 
 ### 1. Install & Set Up
 
@@ -60,8 +61,16 @@ TeamManagementApp/
 # Clone and install
 git clone <repo-url> && cd TeamManagementApp
 npm install
+```
 
-# Set up database
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URL="postgresql://..."
+```
+
+```bash
+# Generate Prisma client and push schema
 npx prisma generate
 npx prisma db push
 
@@ -95,17 +104,36 @@ Press **w** for web, **i** for iOS Simulator, or **a** for Android Emulator.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/auth/login` | Login (returns token for mobile) |
+| `POST` | `/api/auth/login` | Login — returns session cookie (web) + token (mobile) |
 | `POST` | `/api/auth/register` | Create account |
 | `GET` | `/api/auth/me` | Current user session |
 | `GET/POST` | `/api/teams` | List / create teams |
+| `DELETE` | `/api/teams/[id]` | Delete team and all associated data |
 | `GET/POST` | `/api/events` | List / create events |
+| `GET/PATCH/DELETE` | `/api/events/[id]` | Get / update / delete event |
+| `POST` | `/api/events/[id]/rsvp` | Submit RSVP for an event |
 | `GET/POST` | `/api/roster` | List / add team members |
+| `DELETE` | `/api/roster/[id]` | Remove member from team |
 | `GET/POST` | `/api/messages` | List / send messages |
+| `GET/POST` | `/api/announcements` | List / create announcements |
 | `GET/POST` | `/api/invoices` | List / create invoices |
 | `PATCH` | `/api/invoices/[id]` | Update invoice status |
+| `GET/POST` | `/api/players/[id]/feedback` | Player feedback |
+| `GET/POST` | `/api/players/[id]/stats` | Player stats |
+| `GET/POST` | `/api/notifications` | List / manage notifications |
+| `GET/POST` | `/api/family` | Parent–child family links |
+| `POST` | `/api/upload` | Upload file (returns URL) |
 
 All data endpoints accept both **cookie auth** (web) and **`Authorization: Bearer <token>`** (mobile).
+
+## Deployment
+
+The app is configured for [Vercel](https://vercel.com). Set `DATABASE_URL` in Vercel environment variables, then:
+
+```bash
+# Vercel runs this automatically on deploy
+npm run vercel-build   # runs prisma migrate deploy && next build
+```
 
 ## Demo Accounts
 

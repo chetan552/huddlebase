@@ -2,35 +2,36 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Users, Calendar, CheckCircle2, MessageCircle, Banknote, BarChart3, Zap } from 'lucide-react';
 
 const FEATURES = [
   {
-    icon: '👥',
+    icon: <Users size={28} />,
     title: 'Team & Roster',
     description: 'Manage players, coaches, and parents with role-based access. Import rosters via CSV.',
   },
   {
-    icon: '📅',
+    icon: <Calendar size={28} />,
     title: 'Smart Scheduling',
     description: 'Practices, games, and meetings with recurring events, calendar sync, and reminders.',
   },
   {
-    icon: '✅',
+    icon: <CheckCircle2 size={28} />,
     title: 'RSVP & Attendance',
     description: 'Track availability, attendance history, and generate reports with one tap.',
   },
   {
-    icon: '💬',
+    icon: <MessageCircle size={28} />,
     title: 'Team Chat',
     description: 'Real-time messaging, announcements, event threads, and push notifications.',
   },
   {
-    icon: '💵',
+    icon: <Banknote size={28} />,
     title: 'Payments',
     description: 'Create invoices, track payments, manage installments, and export financial reports.',
   },
   {
-    icon: '📊',
+    icon: <BarChart3 size={28} />,
     title: 'Analytics',
     description: 'Attendance trends, revenue insights, team health scores, and performance tracking.',
   },
@@ -62,7 +63,7 @@ export default function LandingPage() {
       }}>
         <div className="landing-nav__inner">
           <div className="landing-logo">
-            <span className="landing-logo__icon">⚡</span>
+            <span className="landing-logo__icon"><Zap size={20} /></span>
             <span className="landing-logo__text">HuddleBase</span>
           </div>
           <div className="landing-nav__links">
@@ -132,7 +133,7 @@ export default function LandingPage() {
           <div className="features-grid">
             {FEATURES.map((feature, i) => (
               <div key={i} className="feature-card" style={{ animationDelay: `${i * 100}ms` }}>
-                <div className="feature-card__icon">{feature.icon}</div>
+                <div className="feature-card__icon" style={{ color: 'var(--primary-400)' }}>{feature.icon}</div>
                 <h3 className="feature-card__title">{feature.title}</h3>
                 <p className="feature-card__desc">{feature.description}</p>
               </div>
@@ -175,7 +176,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="landing-footer__inner">
             <div className="landing-logo">
-              <span className="landing-logo__icon">⚡</span>
+              <span className="landing-logo__icon"><Zap size={20} /></span>
               <span className="landing-logo__text">HuddleBase</span>
             </div>
             <p className="landing-footer__copy">

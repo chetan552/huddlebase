@@ -133,16 +133,8 @@ export default function ChatPage() {
                 }}>
                     <button
                         className="mobile-back-btn"
+                        aria-label="Back to channels"
                         onClick={() => setShowMobileSidebar(true)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-secondary)',
-                            fontSize: '1.2rem',
-                            cursor: 'pointer',
-                            display: 'none',
-                            padding: '0 0.5rem 0 0',
-                        }}
                     >
                         ←
                     </button>

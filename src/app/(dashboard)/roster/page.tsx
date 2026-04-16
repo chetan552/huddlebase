@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
 import { getAvatarColor, getInitials } from '@/lib/utils';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface Player {
     id: string;
@@ -34,6 +35,7 @@ export default function RosterPage() {
         name: '', email: '', teamId: '', role: 'PLAYER', jersey: '', position: '', category: '', phone: '',
     });
     const [loading, setLoading] = useState(false);
+    const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
     const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
 
     const fetchRoster = async () => {
@@ -79,21 +81,14 @@ export default function RosterPage() {
         setLoading(false);
     };
 
-    const handleRemove = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to remove ${name} from this team?`)) return;
-        try {
-            const res = await fetch(`/api/roster/${id}`, {
-                method: 'DELETE',
-            });
-            const data = await res.json();
-            if (data.success) {
-                fetchRoster();
-            } else {
-                alert(data.error || 'Failed to remove player');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Failed to remove player');
+    const handleRemove = async () => {
+        if (!pendingRemove) return;
+        const res = await fetch(`/api/roster/${pendingRemove.id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            fetchRoster();
+        } else {
+            throw new Error(data.error || 'Failed to remove player');
         }
     };
 
@@ -214,8 +209,8 @@ export default function RosterPage() {
                                         <td>
                                             <button
                                                 className="btn btn-ghost btn-icon"
-                                                title="Remove from Team"
-                                                onClick={() => handleRemove(player.id, player.name)}
+                                                aria-label={`Remove ${player.name}`}
+                                                onClick={() => setPendingRemove({ id: player.id, name: player.name })}
                                                 style={{ color: 'var(--danger-400)' }}
                                             >
                                                 🗑️
@@ -227,6 +222,17 @@ export default function RosterPage() {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {pendingRemove && (
+                <ConfirmDialog
+                    title="Remove Player"
+                    description={`Are you sure you want to remove ${pendingRemove.name} from this team?`}
+                    confirmLabel="Remove"
+                    tone="danger"
+                    onConfirm={handleRemove}
+                    onClose={() => setPendingRemove(null)}
+                />
             )}
 
             {/* Add Player Modal */}
