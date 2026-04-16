@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { NAV_ITEMS } from '@/lib/constants';
-import { Calendar, MessageCircle, CreditCard, Bell, Zap, Menu, X, ChevronLeft, LogOut } from 'lucide-react';
+import {
+  LayoutDashboard, Users, Calendar, ClipboardList,
+  MessageCircle, CreditCard, Settings, Bell, Zap,
+  Menu, LogOut,
+} from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -17,49 +21,15 @@ interface Notification {
   createdAt: string;
 }
 
-// SVG icon map for nav items
-const NAV_SVG_ICONS: Record<string, React.ReactElement> = {
-  '/dashboard': (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-    </svg>
-  ),
-  '/teams': (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  '/schedule': (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  ),
-  '/roster': (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-      <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
-      <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-    </svg>
-  ),
-  '/chat': (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-    </svg>
-  ),
-  '/payments': (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-    </svg>
-  ),
-  '/settings': (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-  ),
+// Lucide icon map for nav items
+const NAV_ICONS: Record<string, React.ReactElement> = {
+  '/dashboard': <LayoutDashboard size={18} strokeWidth={1.75} />,
+  '/teams':     <Users          size={18} strokeWidth={1.75} />,
+  '/schedule':  <Calendar       size={18} strokeWidth={1.75} />,
+  '/roster':    <ClipboardList  size={18} strokeWidth={1.75} />,
+  '/chat':      <MessageCircle  size={18} strokeWidth={1.75} />,
+  '/payments':  <CreditCard     size={18} strokeWidth={1.75} />,
+  '/settings':  <Settings       size={18} strokeWidth={1.75} />,
 };
 
 function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolean; setMobileMenuOpen: (v: boolean) => void }) {
@@ -268,21 +238,18 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
         <nav className="sidebar__nav">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-            const icon = NAV_SVG_ICONS[item.href];
+            const icon = NAV_ICONS[item.href];
+            const label = item.label === 'Teams' && (user?.role === 'PARENT' || user?.role === 'PLAYER') ? 'My Teams' : item.label;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? label : undefined}
               >
+                {isActive && <span className="sidebar__link-bar" />}
                 <span className="sidebar__link-icon">{icon}</span>
-                {!collapsed && (
-                  <span className="sidebar__link-label">
-                    {item.label === 'Teams' && (user?.role === 'PARENT' || user?.role === 'PLAYER') ? 'My Teams' : item.label}
-                  </span>
-                )}
-                {isActive && !collapsed && <span className="sidebar__link-pip" />}
+                {!collapsed && <span className="sidebar__link-label">{label}</span>}
               </Link>
             );
           })}
@@ -355,8 +322,8 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 1.25rem;
-          height: 70px;
+          padding: 0 1rem;
+          height: 60px;
           border-bottom: 1px solid rgba(255,255,255,0.06);
           flex-shrink: 0;
         }
@@ -370,24 +337,21 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           min-width: 0;
         }
         .sidebar__logo-orb {
-          width: 32px;
-          height: 32px;
-          border-radius: 10px;
+          width: 28px;
+          height: 28px;
+          border-radius: 7px;
           background: linear-gradient(135deg, #3b82f6, #14b8a6);
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          box-shadow: 0 4px 12px rgba(59,130,246,0.35);
+          box-shadow: 0 2px 8px rgba(59,130,246,0.3);
         }
         .sidebar__logo-text {
-          font-size: 1.05rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          background: linear-gradient(135deg, #e2e8f0, #94a3b8);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          font-size: 0.9375rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          color: #e2e8f0;
           overflow: hidden;
           text-overflow: ellipsis;
         }
@@ -440,10 +404,10 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
         /* Nav */
         .sidebar__nav {
           flex: 1;
-          padding: 1rem 0.875rem;
+          padding: 0.75rem 0.75rem;
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
+          gap: 2px;
           overflow-y: auto;
           overflow-x: hidden;
         }
@@ -451,13 +415,13 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           display: flex;
           flex-direction: row;
           align-items: center;
-          gap: 0.875rem;
-          padding: 0.8rem 0.875rem;
-          border-radius: 12px;
-          color: #6b7280;
-          font-size: 0.9375rem;
-          font-weight: 600;
-          transition: all 0.15s ease;
+          gap: 0.75rem;
+          padding: 0.6rem 0.75rem;
+          border-radius: 8px;
+          color: #64748b;
+          font-size: 0.875rem;
+          font-weight: 500;
+          transition: background 0.12s ease, color 0.12s ease;
           position: relative;
           text-decoration: none;
           white-space: nowrap;
@@ -465,56 +429,64 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           line-height: 1;
         }
         .sidebar__link:hover {
-          background: rgba(255,255,255,0.05);
-          color: #9ca3af;
+          background: rgba(255,255,255,0.06);
+          color: #cbd5e1;
         }
         .sidebar__link--active {
-          background: #252628;
-          color: #f3f4f6;
-          font-weight: 700;
+          background: rgba(59,130,246,0.12);
+          color: #e2e8f0;
+          font-weight: 600;
         }
         .sidebar__link--active:hover {
-          background: #2a2b2e;
-          color: #f3f4f6;
+          background: rgba(59,130,246,0.16);
+        }
+        .sidebar__link-bar {
+          position: absolute;
+          left: 0;
+          top: 20%;
+          bottom: 20%;
+          width: 3px;
+          background: #3b82f6;
+          border-radius: 0 3px 3px 0;
         }
         .sidebar__link-icon {
           flex-shrink: 0;
-          width: 22px;
-          height: 22px;
+          width: 20px;
+          height: 20px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          color: #6b7280;
-          transition: color 0.15s;
+          color: #475569;
+          transition: color 0.12s;
         }
         .sidebar__link--active .sidebar__link-icon {
-          color: #3b82f6;
+          color: #60a5fa;
         }
-        .sidebar__link:hover .sidebar__link-icon {
-          color: #9ca3af;
+        .sidebar__link:not(.sidebar__link--active):hover .sidebar__link-icon {
+          color: #94a3b8;
         }
         .sidebar__link-label {
           overflow: hidden;
           text-overflow: ellipsis;
           flex: 1;
+          letter-spacing: 0.01em;
         }
-        .sidebar__link-pip { display: none; }
 
         /* Footer */
         .sidebar__footer {
-          padding: 0.75rem 0.625rem;
+          padding: 0.75rem;
           border-top: 1px solid rgba(255,255,255,0.06);
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
+          gap: 2px;
         }
         .sidebar__user {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.625rem;
           padding: 0.5rem 0.625rem;
-          border-radius: 10px;
-          transition: background 0.15s;
+          border-radius: 8px;
+          transition: background 0.12s;
         }
         .sidebar__user:hover {
           background: rgba(255,255,255,0.04);
@@ -524,26 +496,26 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           flex-shrink: 0;
         }
         .sidebar__avatar {
-          width: 34px;
-          height: 34px;
-          border-radius: 10px;
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: 700;
-          border: 2px solid rgba(255,255,255,0.12);
+          border: 1.5px solid rgba(255,255,255,0.1);
         }
         .sidebar__avatar-status {
           position: absolute;
           bottom: -1px;
           right: -1px;
-          width: 9px;
-          height: 9px;
+          width: 8px;
+          height: 8px;
           background: #22c55e;
           border-radius: 50%;
-          border: 2px solid var(--surface-800);
+          border: 2px solid #111213;
         }
         .sidebar__user-info {
           overflow: hidden;
@@ -551,32 +523,33 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           min-width: 0;
         }
         .sidebar__user-name {
-          font-size: 0.825rem;
+          font-size: 0.8rem;
           font-weight: 600;
-          color: var(--text-primary);
+          color: #cbd5e1;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
         .sidebar__user-role {
-          font-size: 0.68rem;
-          color: var(--text-tertiary);
+          font-size: 0.65rem;
+          color: #475569;
           text-transform: capitalize;
           margin-top: 1px;
+          letter-spacing: 0.02em;
         }
         .sidebar__logout {
           display: flex;
           align-items: center;
-          gap: 0.6rem;
+          gap: 0.625rem;
           width: 100%;
-          padding: 0.5rem 0.75rem;
+          padding: 0.5rem 0.625rem;
           border: none;
           background: transparent;
-          color: var(--text-tertiary);
+          color: #475569;
           font-size: 0.8rem;
-          border-radius: 10px;
+          border-radius: 8px;
           cursor: pointer;
-          transition: all 0.15s;
+          transition: background 0.12s, color 0.12s;
         }
         .sidebar__logout:hover {
           background: rgba(239,68,68,0.08);
