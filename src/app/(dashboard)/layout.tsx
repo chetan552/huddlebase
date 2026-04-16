@@ -298,8 +298,8 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           top: 0;
           bottom: 0;
           width: var(--sidebar-width);
-          background: #111213;
-          border-right: 1px solid rgba(255,255,255,0.06);
+          background: var(--sidebar-bg, #111213);
+          border-right: 1px solid var(--sidebar-border, rgba(255,255,255,0.06));
           display: flex;
           flex-direction: column;
           z-index: 50;
@@ -324,7 +324,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           justify-content: space-between;
           padding: 0 1rem;
           height: 60px;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
+          border-bottom: 1px solid var(--sidebar-border, rgba(255,255,255,0.06));
           flex-shrink: 0;
         }
         .sidebar__logo {
@@ -351,7 +351,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           font-size: 0.9375rem;
           font-weight: 700;
           letter-spacing: -0.01em;
-          color: #e2e8f0;
+          color: var(--text-primary);
           overflow: hidden;
           text-overflow: ellipsis;
         }
@@ -377,7 +377,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           flex-shrink: 0;
         }
         .sidebar__icon-btn:hover {
-          background: rgba(255,255,255,0.07);
+          background: var(--sidebar-hover-bg, rgba(255,255,255,0.07));
           color: var(--text-primary);
         }
         .sidebar__badge {
@@ -418,7 +418,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           gap: 0.75rem;
           padding: 0.6rem 0.75rem;
           border-radius: 8px;
-          color: #64748b;
+          color: var(--text-tertiary);
           font-size: 0.875rem;
           font-weight: 500;
           transition: background 0.12s ease, color 0.12s ease;
@@ -429,12 +429,12 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           line-height: 1;
         }
         .sidebar__link:hover {
-          background: rgba(255,255,255,0.06);
-          color: #cbd5e1;
+          background: var(--sidebar-hover-bg, rgba(255,255,255,0.06));
+          color: var(--text-primary);
         }
         .sidebar__link--active {
           background: rgba(59,130,246,0.12);
-          color: #e2e8f0;
+          color: var(--text-primary);
           font-weight: 600;
         }
         .sidebar__link--active:hover {
@@ -456,14 +456,14 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          color: #475569;
+          color: var(--text-tertiary);
           transition: color 0.12s;
         }
         .sidebar__link--active .sidebar__link-icon {
           color: #60a5fa;
         }
         .sidebar__link:not(.sidebar__link--active):hover .sidebar__link-icon {
-          color: #94a3b8;
+          color: var(--text-secondary);
         }
         .sidebar__link-label {
           overflow: hidden;
@@ -475,7 +475,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
         /* Footer */
         .sidebar__footer {
           padding: 0.75rem;
-          border-top: 1px solid rgba(255,255,255,0.06);
+          border-top: 1px solid var(--sidebar-border, rgba(255,255,255,0.06));
           display: flex;
           flex-direction: column;
           gap: 2px;
@@ -489,7 +489,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           transition: background 0.12s;
         }
         .sidebar__user:hover {
-          background: rgba(255,255,255,0.04);
+          background: var(--sidebar-hover-bg, rgba(255,255,255,0.04));
         }
         .sidebar__avatar-wrap {
           position: relative;
@@ -505,7 +505,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           color: white;
           font-size: 0.7rem;
           font-weight: 700;
-          border: 1.5px solid rgba(255,255,255,0.1);
+          border: 1.5px solid var(--sidebar-avatar-border, rgba(255,255,255,0.1));
         }
         .sidebar__avatar-status {
           position: absolute;
@@ -515,7 +515,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           height: 8px;
           background: #22c55e;
           border-radius: 50%;
-          border: 2px solid #111213;
+          border: 2px solid var(--sidebar-bg, #111213);
         }
         .sidebar__user-info {
           overflow: hidden;
@@ -525,14 +525,14 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
         .sidebar__user-name {
           font-size: 0.8rem;
           font-weight: 600;
-          color: #cbd5e1;
+          color: var(--text-primary);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
         .sidebar__user-role {
           font-size: 0.65rem;
-          color: #475569;
+          color: var(--text-tertiary);
           text-transform: capitalize;
           margin-top: 1px;
           letter-spacing: 0.02em;
@@ -545,7 +545,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           padding: 0.5rem 0.625rem;
           border: none;
           background: transparent;
-          color: #475569;
+          color: var(--text-tertiary);
           font-size: 0.8rem;
           border-radius: 8px;
           cursor: pointer;
@@ -564,7 +564,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           width: 340px;
           max-height: 440px;
           background: var(--surface-800);
-          border: 1px solid rgba(255,255,255,0.08);
+          border: 1px solid var(--sidebar-border, rgba(255,255,255,0.08));
           border-radius: 12px;
           box-shadow: 0 20px 50px rgba(0,0,0,0.5);
           z-index: 100;
@@ -576,7 +576,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           align-items: center;
           justify-content: space-between;
           padding: 0.875rem 1rem;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
+          border-bottom: 1px solid var(--sidebar-border, rgba(255,255,255,0.06));
         }
         .notif-panel__mark-read {
           background: none;
@@ -595,9 +595,9 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           padding: 0.75rem 1rem;
           cursor: pointer;
           transition: background 0.15s;
-          border-bottom: 1px solid rgba(255,255,255,0.04);
+          border-bottom: 1px solid var(--sidebar-border, rgba(255,255,255,0.04));
         }
-        .notif-item:hover { background: rgba(255,255,255,0.04); }
+        .notif-item:hover { background: var(--sidebar-hover-bg, rgba(255,255,255,0.04)); }
         .notif-item--unread { background: rgba(59,130,246,0.05); }
         .notif-item__icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
         .notif-item__title { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
@@ -606,6 +606,15 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
         .notif-item__dot { width: 7px; height: 7px; border-radius: 50%; background: #3b82f6; flex-shrink: 0; margin-top: 6px; box-shadow: 0 0 5px rgba(59,130,246,0.6); }
 
         .hide-desktop { display: none !important; }
+
+        /* Light mode — override sidebar CSS variables */
+        :global([data-theme="light"]) .sidebar {
+          --sidebar-bg: #f1f5f9;
+          --sidebar-border: rgba(0,0,0,0.08);
+          --sidebar-hover-bg: rgba(0,0,0,0.05);
+          --sidebar-avatar-border: rgba(0,0,0,0.12);
+          background: #f1f5f9;
+        }
 
         @media (max-width: 768px) {
           .sidebar {

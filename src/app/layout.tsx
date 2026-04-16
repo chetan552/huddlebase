@@ -13,7 +13,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Restore theme before first paint to avoid flash */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            if (localStorage.getItem('huddlebase-theme') === 'light')
+              document.documentElement.setAttribute('data-theme', 'light');
+          } catch {}
+        `}} />
+      </head>
       <body>{children}</body>
     </html>
   );
