@@ -16,6 +16,10 @@ interface Event {
     teamName: string;
     teamColor: string;
     isCancelled: boolean;
+    opponentName: string | null;
+    homeScore: number | null;
+    awayScore: number | null;
+    result: string | null;
 }
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -61,6 +65,7 @@ export default function SchedulePage() {
     const [formData, setFormData] = useState({
         title: '', type: 'PRACTICE', teamId: '', location: '',
         startTime: '', endTime: '', notes: '',
+        opponentName: '', homeScore: '', awayScore: '', result: '',
     });
     const [loading, setLoading] = useState(false);
     const [selectedEventRsvps, setSelectedEventRsvps] = useState<Event | null>(null);
@@ -133,6 +138,23 @@ export default function SchedulePage() {
         fetchRsvps(ev.id);
     };
 
+    const handleCancelEvent = async () => {
+        if (!selectedEventRsvps) return;
+        try {
+            const res = await fetch(`/api/events/${selectedEventRsvps.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isCancelled: true }),
+            });
+            if (res.ok) {
+                setSelectedEventRsvps((prev) => prev ? { ...prev, isCancelled: true } : null);
+                fetchEvents();
+            }
+        } catch (err) {
+            console.error('Failed to cancel event:', err);
+        }
+    };
+
     const handleRsvp = async (status: string) => {
         if (!selectedEventRsvps) return;
         const body: any = { status };
@@ -192,7 +214,7 @@ export default function SchedulePage() {
             const data = await res.json();
             if (data.success) {
                 setShowModal(false);
-                setFormData({ title: '', type: 'PRACTICE', teamId: '', location: '', startTime: '', endTime: '', notes: '' });
+                setFormData({ title: '', type: 'PRACTICE', teamId: '', location: '', startTime: '', endTime: '', notes: '', opponentName: '', homeScore: '', awayScore: '', result: '' });
                 fetchEvents();
             }
         } catch (err) {
@@ -292,16 +314,20 @@ export default function SchedulePage() {
                                                 fontSize: '0.65rem',
                                                 padding: '2px 6px',
                                                 borderRadius: '3px',
-                                                background: `color-mix(in oklab, ${typeColors[ev.type]} 18%, transparent)`,
-                                                color: typeColors[ev.type],
+                                                background: ev.isCancelled
+                                                    ? 'rgba(148, 163, 184, 0.08)'
+                                                    : `color-mix(in oklab, ${typeColors[ev.type]} 18%, transparent)`,
+                                                color: ev.isCancelled ? 'var(--text-tertiary)' : typeColors[ev.type],
                                                 whiteSpace: 'nowrap',
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
-                                                borderLeft: `2px solid ${typeColors[ev.type]}`,
+                                                borderLeft: `2px solid ${ev.isCancelled ? 'var(--text-tertiary)' : typeColors[ev.type]}`,
                                                 zIndex: 10,
+                                                textDecoration: ev.isCancelled ? 'line-through' : 'none',
+                                                opacity: ev.isCancelled ? 0.7 : 1,
                                             }}
                                         >
-                                            {ev.title}
+                                            {ev.isCancelled ? 'Cancelled: ' : ''}{ev.title}
                                         </div>
                                     ))}
                                     {dayEvents.length > 3 && (
@@ -386,6 +412,17 @@ export default function SchedulePage() {
                                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                                     />
                                 </div>
+                                {formData.type === 'GAME' && (
+                                    <div className="form-group">
+                                        <label className="form-label">Opponent</label>
+                                        <input
+                                            className="form-input"
+                                            placeholder="e.g., rival team name"
+                                            value={formData.opponentName}
+                                            onChange={(e) => setFormData({ ...formData, opponentName: e.target.value })}
+                                        />
+                                    </div>
+                                )}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div className="form-group">
                                         <label className="form-label">Start Time</label>
@@ -424,19 +461,125 @@ export default function SchedulePage() {
                     <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
                         <div className="modal-header" style={{ alignItems: 'flex-start' }}>
                             <div>
-                                <h2 className="modal-title">{selectedEventRsvps.title}</h2>
+                                <h2 className="modal-title" style={{ textDecoration: selectedEventRsvps.isCancelled ? 'line-through' : 'none', opacity: selectedEventRsvps.isCancelled ? 0.7 : 1 }}>
+                                    {selectedEventRsvps.title}
+                                </h2>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                     {new Date(selectedEventRsvps.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                 </p>
-                                <span className={`badge ${TYPE_BADGE_CLASS[selectedEventRsvps.type] || 'badge-neutral'}`} style={{ marginTop: '0.5rem' }}>
-                                    {selectedEventRsvps.type}
-                                </span>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                    <span className={`badge ${TYPE_BADGE_CLASS[selectedEventRsvps.type] || 'badge-neutral'}`}>
+                                        {selectedEventRsvps.type}
+                                    </span>
+                                    {selectedEventRsvps.isCancelled && (
+                                        <span className="badge" style={{ background: 'var(--danger-400)20', color: 'var(--danger-400)' }}>
+                                            CANCELLED
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <button className="btn btn-ghost btn-icon" onClick={() => setSelectedEventRsvps(null)}>✕</button>
                         </div>
                         <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                            {/* Game result display/edit for staff */}
+                            {selectedEventRsvps.type === 'GAME' && (
+                                <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--surface-600)' }}>
+                                    <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
+                                        {selectedEventRsvps.opponentName ? `vs ${selectedEventRsvps.opponentName}` : 'Game Result'}
+                                    </h3>
+                                    {isStaff && !selectedEventRsvps.isCancelled ? (
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                            <input
+                                                type="number"
+                                                className="form-input"
+                                                placeholder="Us"
+                                                value={selectedEventRsvps.homeScore ?? ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === '' ? null : Number(e.target.value);
+                                                    setSelectedEventRsvps(prev => prev ? { ...prev, homeScore: val } : null);
+                                                }}
+                                                style={{ width: '70px', textAlign: 'center' }}
+                                            />
+                                            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>—</span>
+                                            <input
+                                                type="number"
+                                                className="form-input"
+                                                placeholder="Them"
+                                                value={selectedEventRsvps.awayScore ?? ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === '' ? null : Number(e.target.value);
+                                                    setSelectedEventRsvps(prev => prev ? { ...prev, awayScore: val } : null);
+                                                }}
+                                                style={{ width: '70px', textAlign: 'center' }}
+                                            />
+                                            <select
+                                                className="form-input form-select"
+                                                value={selectedEventRsvps.result || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value || null;
+                                                    setSelectedEventRsvps(prev => prev ? { ...prev, result: val } : null);
+                                                }}
+                                                style={{ flex: 1 }}
+                                            >
+                                                <option value="">Result</option>
+                                                <option value="WIN">Win</option>
+                                                <option value="LOSS">Loss</option>
+                                                <option value="DRAW">Draw</option>
+                                            </select>
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={async () => {
+                                                    try {
+                                                        const res = await fetch(`/api/events/${selectedEventRsvps.id}`, {
+                                                            method: 'PATCH',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({
+                                                                homeScore: selectedEventRsvps.homeScore,
+                                                                awayScore: selectedEventRsvps.awayScore,
+                                                                result: selectedEventRsvps.result,
+                                                            }),
+                                                        });
+                                                        if (res.ok) fetchEvents();
+                                                    } catch (err) { console.error(err); }
+                                                }}
+                                            >
+                                                Save
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                                            {selectedEventRsvps.homeScore !== null && selectedEventRsvps.awayScore !== null ? (
+                                                <span style={{ fontWeight: 700 }}>
+                                                    {selectedEventRsvps.homeScore} — {selectedEventRsvps.awayScore}
+                                                    {selectedEventRsvps.result && (
+                                                        <span style={{ marginLeft: '0.5rem', color: selectedEventRsvps.result === 'WIN' ? 'var(--success-400)' : selectedEventRsvps.result === 'LOSS' ? 'var(--danger-400)' : 'var(--text-secondary)' }}>
+                                                            ({selectedEventRsvps.result})
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-tertiary)' }}>Score not recorded</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Staff cancel action */}
+                            {isStaff && !selectedEventRsvps.isCancelled && (
+                                <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--surface-600)' }}>
+                                    <button
+                                        className="btn btn-danger"
+                                        onClick={handleCancelEvent}
+                                        style={{ width: '100%' }}
+                                    >
+                                        Cancel Event
+                                    </button>
+                                </div>
+                            )}
+
                             {/* User RSVP Controls */}
-                            {!isStaff && (
+                            {!isStaff && !selectedEventRsvps.isCancelled && (
                                 <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--surface-600)' }}>
                                     {isParent && children.length > 0 ? (
                                         <>

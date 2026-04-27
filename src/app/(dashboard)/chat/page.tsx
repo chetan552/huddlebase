@@ -57,6 +57,13 @@ export default function ChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Auto-refresh messages every 5 seconds
+    useEffect(() => {
+        if (!activeTeam) return;
+        const interval = setInterval(() => fetchMessages(activeTeam), 5000);
+        return () => clearInterval(interval);
+    }, [activeTeam]);
+
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !activeTeam) return;

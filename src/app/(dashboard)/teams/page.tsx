@@ -16,6 +16,7 @@ interface Team {
     logo: string | null;
     memberCount: number;
     upcomingEvents: number;
+    record: { wins: number; losses: number; draws: number };
 }
 
 export default function TeamsPage() {
@@ -184,6 +185,14 @@ export default function TeamsPage() {
                                 <div>
                                     <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{team.upcomingEvents}</div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Events</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+                                        {team.record.wins + team.record.losses + team.record.draws > 0
+                                            ? `${team.record.wins}W — ${team.record.losses}L — ${team.record.draws}D`
+                                            : '—'}
+                                    </div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Record</div>
                                 </div>
                             </div>
                         </Link>

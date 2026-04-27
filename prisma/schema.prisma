@@ -119,6 +119,10 @@ model Event {
   endTime     DateTime?
   uniform     String?
   notes       String?
+  opponentName String?
+  homeScore    Int?
+  awayScore    Int?
+  result       String?  // WIN, LOSS, DRAW
   isRecurring Boolean  @default(false)
   recurrence  String?  // JSON: { frequency, interval, until }
   isCancelled Boolean  @default(false)

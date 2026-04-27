@@ -33,6 +33,10 @@ export async function GET(req: NextRequest) {
             teamName: e.team.name,
             teamColor: e.team.color,
             isCancelled: e.isCancelled,
+            opponentName: e.opponentName,
+            homeScore: e.homeScore,
+            awayScore: e.awayScore,
+            result: e.result,
         }));
 
         return NextResponse.json({ success: true, data });
@@ -49,7 +53,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { title, type, teamId, location, startTime, endTime, notes } = await req.json();
+        const { title, type, teamId, location, startTime, endTime, notes, opponentName, homeScore, awayScore, result } = await req.json();
 
         if (!title || !teamId || !startTime) {
             return NextResponse.json({ success: false, error: 'Title, team, and start time are required' }, { status: 400 });
@@ -64,6 +68,10 @@ export async function POST(req: NextRequest) {
                 startTime: new Date(startTime),
                 endTime: endTime ? new Date(endTime) : null,
                 notes: notes || null,
+                opponentName: opponentName || null,
+                homeScore: homeScore !== undefined ? homeScore : null,
+                awayScore: awayScore !== undefined ? awayScore : null,
+                result: result || null,
             },
             include: { team: { select: { name: true, color: true } } },
         });
@@ -97,6 +105,10 @@ export async function POST(req: NextRequest) {
                 teamName: event.team.name,
                 teamColor: event.team.color,
                 isCancelled: event.isCancelled,
+                opponentName: event.opponentName,
+                homeScore: event.homeScore,
+                awayScore: event.awayScore,
+                result: event.result,
             },
         }, { status: 201 });
     } catch (error) {

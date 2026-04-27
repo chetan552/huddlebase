@@ -67,6 +67,19 @@ export async function POST(req: NextRequest) {
             });
         }
 
+        // Check for jersey number conflict on the same team
+        if (jersey) {
+            const existingJersey = await prisma.teamMember.findFirst({
+                where: { teamId, jersey },
+            });
+            if (existingJersey) {
+                return NextResponse.json(
+                    { success: false, error: `Jersey #${jersey} is already taken on this team` },
+                    { status: 409 }
+                );
+            }
+        }
+
         // Add to team
         const member = await prisma.teamMember.create({
             data: {

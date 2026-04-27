@@ -15,20 +15,30 @@ export async function GET(req: NextRequest) {
             },
             include: {
                 _count: { select: { members: true, events: true } },
+                events: {
+                    where: { type: 'GAME', isCancelled: false, result: { not: null } },
+                    select: { result: true },
+                },
             },
             orderBy: { createdAt: 'desc' },
         });
 
-        const data = teams.map((t) => ({
-            id: t.id,
-            name: t.name,
-            sport: t.sport,
-            season: t.season,
-            color: t.color,
-            logo: t.logo,
-            memberCount: t._count.members,
-            upcomingEvents: t._count.events,
-        }));
+        const data = teams.map((t) => {
+            const wins = t.events.filter((e) => e.result === 'WIN').length;
+            const losses = t.events.filter((e) => e.result === 'LOSS').length;
+            const draws = t.events.filter((e) => e.result === 'DRAW').length;
+            return {
+                id: t.id,
+                name: t.name,
+                sport: t.sport,
+                season: t.season,
+                color: t.color,
+                logo: t.logo,
+                memberCount: t._count.members,
+                upcomingEvents: t._count.events,
+                record: { wins, losses, draws },
+            };
+        });
 
         return NextResponse.json({ success: true, data });
     } catch (error) {

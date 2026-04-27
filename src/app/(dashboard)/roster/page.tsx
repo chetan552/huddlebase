@@ -37,6 +37,7 @@ export default function RosterPage() {
     });
     const [loading, setLoading] = useState(false);
     const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
+    const [formError, setFormError] = useState<string | null>(null);
     const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
 
     const fetchRoster = async () => {
@@ -66,6 +67,7 @@ export default function RosterPage() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setFormError(null);
         try {
             const res = await fetch('/api/roster', {
                 method: 'POST',
@@ -77,6 +79,8 @@ export default function RosterPage() {
                 setShowModal(false);
                 setFormData({ name: '', email: '', teamId: '', role: 'PLAYER', jersey: '', position: '', category: '', phone: '' });
                 fetchRoster();
+            } else {
+                setFormError(data.error || 'Failed to add player');
             }
         } catch (err) { console.error(err); }
         setLoading(false);
@@ -237,10 +241,15 @@ export default function RosterPage() {
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">Add Player</h2>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)} aria-label="Close"><X size={18} /></button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => { setShowModal(false); setFormError(null); }} aria-label="Close"><X size={18} /></button>
                         </div>
                         <form onSubmit={handleCreate}>
                             <div className="modal-body">
+                                {formError && (
+                                    <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--danger-400)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+                                        {formError}
+                                    </div>
+                                )}
                                 <div className="form-group">
                                     <label className="form-label">Full Name</label>
                                     <input className="form-input" placeholder="John Smith" value={formData.name}

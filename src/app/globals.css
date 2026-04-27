@@ -1470,7 +1470,7 @@ a.sidebar__link,
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
-  line-height: 1;
+  line-height: 1.5;
 }
 
 a.sidebar__link:hover,

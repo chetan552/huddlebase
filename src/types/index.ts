@@ -5,7 +5,9 @@
 export type UserRole = 'ADMIN' | 'COACH' | 'PARENT' | 'PLAYER';
 export type TeamMemberRole = 'COACH' | 'PLAYER' | 'PARENT' | 'MANAGER';
 export type EventType = 'PRACTICE' | 'GAME' | 'MEETING' | 'OTHER';
+export type NotificationType = 'NEW_EVENT' | 'NEW_MESSAGE' | 'INVOICE_DUE' | 'TEAM_JOINED' | 'CANCELLED_EVENT';
 export type RSVPStatus = 'GOING' | 'MAYBE' | 'NOT_GOING' | 'PENDING';
+export type GameResult = 'WIN' | 'LOSS' | 'DRAW';
 export type InvoiceStatus = 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED';
 export type PaymentMethod = 'MANUAL' | 'STRIPE' | 'CHECK' | 'CASH';
 export type AnnouncementPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
