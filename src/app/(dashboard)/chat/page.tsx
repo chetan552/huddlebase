@@ -81,12 +81,8 @@ export default function ChatPage() {
     return (
         <div className="chat-container" style={{ display: 'flex', height: '100vh', overflow: 'hidden', width: '100%' }}>
             {/* Channel list */}
-            <div className={`chat-sidebar ${showMobileSidebar ? 'chat-sidebar-mobile-visible' : 'chat-sidebar-mobile-hidden'}`} style={{
+            <div className={`chat-sidebar chat-sidebar-glass ${showMobileSidebar ? 'chat-sidebar-mobile-visible' : 'chat-sidebar-mobile-hidden'}`} style={{
                 width: '260px',
-                background: 'rgba(15, 23, 42, 0.45)',
-                backdropFilter: 'blur(16px) saturate(120%)',
-                WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-                borderRight: '1px solid rgba(148, 163, 184, 0.08)',
                 display: 'flex', flexDirection: 'column', flexShrink: 0,
             }}>
                 <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid rgba(148, 163, 184, 0.08)', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -142,11 +138,9 @@ export default function ChatPage() {
             {/* Chat area */}
             <div className={`chat-main ${!showMobileSidebar ? 'chat-main-mobile-visible' : 'chat-main-mobile-hidden'}`} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {/* Chat header */}
-                <div style={{
-                    padding: '1rem 1.5rem', borderBottom: '1px solid rgba(148, 163, 184, 0.08)',
+                <div className="chat-header-glass" style={{
+                    padding: '1rem 1.5rem',
                     display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    background: 'rgba(15, 23, 42, 0.4)',
-                    backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
                 }}>
                     <button
                         className="mobile-back-btn"
@@ -211,21 +205,16 @@ export default function ChatPage() {
                                             }}>
                                                 {msg.senderName} · {timeAgo(msg.createdAt)}
                                             </div>
-                                            <div style={{
+                                            <div className={isOwn ? '' : 'msg-bubble-other'} style={{
                                                 padding: '0.625rem 0.875rem',
                                                 borderRadius: '1rem',
-                                                background: isOwn
-                                                    ? 'var(--gradient-brand)'
-                                                    : 'rgba(30, 41, 59, 0.55)',
-                                                backdropFilter: isOwn ? 'none' : 'blur(12px)',
-                                                WebkitBackdropFilter: isOwn ? 'none' : 'blur(12px)',
-                                                border: isOwn ? 'none' : '1px solid rgba(148, 163, 184, 0.08)',
+                                                background: isOwn ? 'var(--gradient-brand)' : undefined,
                                                 color: isOwn ? 'white' : 'var(--text-primary)',
                                                 fontSize: '0.9rem',
                                                 lineHeight: 1.5,
                                                 boxShadow: isOwn
                                                     ? '0 6px 18px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
-                                                    : '0 2px 8px rgba(0, 0, 0, 0.15)',
+                                                    : undefined,
                                                 borderBottomRightRadius: isOwn ? '0.25rem' : '1rem',
                                                 borderBottomLeftRadius: isOwn ? '1rem' : '0.25rem',
                                             }}>
@@ -242,11 +231,9 @@ export default function ChatPage() {
 
                 {/* Message input */}
                 {activeTeam && (
-                    <form onSubmit={handleSend} style={{
-                        padding: '1rem 1.5rem', borderTop: '1px solid rgba(148, 163, 184, 0.08)',
+                    <form onSubmit={handleSend} className="chat-composer-glass" style={{
+                        padding: '1rem 1.5rem',
                         display: 'flex', gap: '0.75rem',
-                        background: 'rgba(15, 23, 42, 0.4)',
-                        backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
                     }}>
                         <input
                             className="form-input"

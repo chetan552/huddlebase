@@ -266,21 +266,10 @@ export default function SchedulePage() {
                                     setFormData((prev) => ({ ...prev, startTime: `${dateStr}T16:00` }));
                                     setShowModal(true);
                                 }}
-                                className="calendar-day-cell"
+                                className={`calendar-day-cell ${isToday ? 'calendar-day-cell--today' : 'calendar-day-cell--normal'}`}
                                 style={{
                                     padding: '0.5rem',
-                                    background: isToday
-                                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.10), rgba(20, 184, 166, 0.06))'
-                                        : 'rgba(15, 23, 42, 0.45)',
-                                    backdropFilter: 'blur(12px)',
-                                    WebkitBackdropFilter: 'blur(12px)',
-                                    border: isToday
-                                        ? '1px solid rgba(59, 130, 246, 0.40)'
-                                        : '1px solid rgba(148, 163, 184, 0.08)',
-                                    borderRadius: 'var(--radius-md)',
-                                    boxShadow: isToday ? '0 0 0 1px rgba(59, 130, 246, 0.15), 0 0 18px rgba(59, 130, 246, 0.18)' : 'none',
                                     cursor: isStaff ? 'pointer' : 'default',
-                                    transition: 'all var(--transition-fast)',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: '4px',
