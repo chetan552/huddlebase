@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Timer } from 'lucide-react';
 
 interface Event {
     id: string; title: string; type: string; startTime: string; location: string | null; teamName: string; teamColor: string;
@@ -87,15 +88,17 @@ export default function PlayerDashboard({ user }: { user: any }) {
         <div className="page-content">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">
-                        Ready to play, {user?.name?.split(' ')[0]}? 🏅
+                    <h1 className="page-title page-title--gradient">
+                        Ready to play, {user?.name?.split(' ')[0]}?
                     </h1>
                     <p className="page-subtitle">Your team stats, schedule, and next matchup.</p>
                 </div>
             </div>
 
-            <div className="card" style={{ marginTop: '2rem', textAlign: 'center', padding: '3rem' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏱️</div>
+            <div className="card" style={{ marginTop: '2rem', textAlign: 'center', padding: '3rem', boxShadow: 'var(--shadow-glass), var(--shadow-glow)' }}>
+                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center', color: 'var(--primary-400)' }}>
+                    <Timer size={48} strokeWidth={1.5} />
+                </div>
                 {loading ? (
                     <p style={{ color: 'var(--text-secondary)' }}>Loading schedule...</p>
                 ) : nextEvent && timeLeft ? (
@@ -131,7 +134,7 @@ export default function PlayerDashboard({ user }: { user: any }) {
                     ) : dashboardData?.announcements && dashboardData.announcements.length > 0 ? (
                         <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {dashboardData.announcements.slice(0, 3).map((announcement) => (
-                                <div key={announcement.id} style={{ padding: '0.75rem', background: 'var(--surface-700)', borderRadius: '0.5rem' }}>
+                                <div key={announcement.id} className="glass-subtle" style={{ padding: '0.75rem' }}>
                                     <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{announcement.title}</div>
                                     <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{announcement.content}</div>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
@@ -156,7 +159,7 @@ export default function PlayerDashboard({ user }: { user: any }) {
                             <div>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Coach Feedback</h3>
                                 {feedback.length > 0 ? (
-                                    <div style={{ padding: '1rem', background: 'var(--surface-700)', borderRadius: '0.5rem', borderLeft: '4px solid var(--primary-500)' }}>
+                                    <div className="glass-subtle" style={{ padding: '1rem', borderLeft: '4px solid var(--primary-500)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                             <div style={{ fontWeight: 'bold' }}>{feedback[0].coach.name}</div>
                                             <div style={{ color: 'var(--primary-400)', fontWeight: 'bold' }}>Effort: {feedback[0].effortRating}/5</div>

@@ -41,9 +41,9 @@ interface Announcement {
 
 const PRIORITY_COLORS: Record<string, string> = {
     LOW: 'var(--text-tertiary)',
-    NORMAL: 'var(--primary-400)',
-    HIGH: '#f59e0b',
-    URGENT: '#ef4444',
+    NORMAL: 'var(--primary-500)',
+    HIGH: 'var(--warning-500)',
+    URGENT: 'var(--danger-500)',
 };
 
 function formatEventDate(iso: string): string {
@@ -129,7 +129,7 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
             {/* Header */}
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Welcome back, {user.name.split(' ')[0]}</h1>
+                    <h1 className="page-title page-title--gradient">Welcome back, {user.name.split(' ')[0]}</h1>
                     <p className="page-subtitle">Here&apos;s what&apos;s happening across your teams.</p>
                 </div>
                 {isStaff && (
@@ -221,7 +221,7 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
                     </div>
 
                     {showAnnouncementForm && (
-                        <form onSubmit={handlePostAnnouncement} style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.625rem', padding: '0.875rem', background: 'var(--surface-700)', borderRadius: '8px' }}>
+                        <form onSubmit={handlePostAnnouncement} className="glass-subtle" style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.625rem', padding: '0.875rem' }}>
                             <select
                                 value={announcementForm.teamId}
                                 onChange={(e) => setAnnouncementForm(f => ({ ...f, teamId: e.target.value }))}
@@ -278,16 +278,15 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
                             {announcements.slice(0, 5).map((a) => (
                                 <div
                                     key={a.id}
+                                    className="glass-subtle"
                                     style={{
                                         padding: '0.625rem 0.75rem',
-                                        background: 'var(--surface-700)',
-                                        borderRadius: '8px',
-                                        borderLeft: `3px solid ${PRIORITY_COLORS[a.priority] ?? 'var(--primary-400)'}`,
+                                        borderLeft: `3px solid ${PRIORITY_COLORS[a.priority] ?? 'var(--primary-500)'}`,
                                     }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                                         <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{a.title}</div>
-                                        {a.priority === 'URGENT' && <AlertTriangle size={14} color="#ef4444" style={{ flexShrink: 0, marginTop: 2 }} />}
+                                        {a.priority === 'URGENT' && <AlertTriangle size={14} color="var(--danger-500)" style={{ flexShrink: 0, marginTop: 2 }} />}
                                     </div>
                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{a.body}</div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '0.375rem' }}>

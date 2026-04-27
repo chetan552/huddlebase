@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
     // Handle CORS for mobile app and other origins during development
     const origin = req.headers.get('origin') || '';
     const allowedOrigins = ['http://localhost:8081', 'http://localhost:19006', 'http://localhost:19000'];

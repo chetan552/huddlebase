@@ -117,7 +117,7 @@ export default function ParentDashboard({ user }: { user: any }) {
         <div className="page-content">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">
+                    <h1 className="page-title page-title--gradient">
                         Welcome back, {user?.name?.split(' ')[0]}
                     </h1>
                     <p className="page-subtitle">Here is your family&apos;s schedule and updates.</p>
@@ -131,7 +131,7 @@ export default function ParentDashboard({ user }: { user: any }) {
                         <p style={{ color: 'var(--text-secondary)', marginTop: '1rem' }}>Loading schedule...</p>
                     ) : nextEvent ? (
                         <div style={{ marginTop: '1rem' }}>
-                            <div style={{ padding: '1rem', background: 'var(--surface-700)', borderRadius: '0.5rem', borderLeft: `4px solid ${nextEvent.teamColor || 'var(--primary-500)'}` }}>
+                            <div className="glass-subtle" style={{ padding: '1rem', borderLeft: `4px solid ${nextEvent.teamColor || 'var(--primary-500)'}` }}>
                                 <div style={{ fontWeight: 'bold' }}>{nextEvent.title}</div>
                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                                     {new Date(nextEvent.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -163,7 +163,7 @@ export default function ParentDashboard({ user }: { user: any }) {
                     ) : children.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {children.map(child => (
-                                <Link href={`/roster/${child.id}`} key={child.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'var(--surface-700)', borderRadius: '0.5rem', textDecoration: 'none', color: 'inherit' }} className="card-interactive">
+                                <Link href={`/roster/${child.id}`} key={child.id} className="glass-subtle card-interactive" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', textDecoration: 'none', color: 'inherit' }}>
                                     <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
                                         {child.name.charAt(0)}
                                     </div>
@@ -194,12 +194,12 @@ export default function ParentDashboard({ user }: { user: any }) {
                 {loading ? (
                     <p style={{ color: 'var(--text-secondary)', marginTop: '1rem' }}>Checking invoices...</p>
                 ) : pendingInvoicesCount > 0 ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', padding: '1rem', background: 'var(--danger-400)20', border: '1px solid var(--danger-400)', borderRadius: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.30)', borderRadius: 'var(--radius-lg)' }}>
                         <div>
                             <div style={{ fontWeight: 'bold', color: 'var(--danger-400)' }}>Action Required</div>
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>You have {pendingInvoicesCount} unpaid {pendingInvoicesCount === 1 ? 'invoice' : 'invoices'}.</div>
                         </div>
-                        <Link href="/payments" className="btn btn-primary" style={{ background: 'var(--danger-400)' }}>
+                        <Link href="/payments" className="btn btn-danger">
                             Pay Now
                         </Link>
                     </div>

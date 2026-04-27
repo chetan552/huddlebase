@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface Event {
     id: string;
@@ -21,10 +22,17 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const typeColors: Record<string, string> = {
-    PRACTICE: '#3b82f6',
-    GAME: '#ef4444',
-    MEETING: '#f59e0b',
-    OTHER: '#8b5cf6',
+    PRACTICE: 'var(--primary-400)',
+    GAME: 'var(--danger-400)',
+    MEETING: 'var(--accent-400)',
+    OTHER: 'var(--warning-400)',
+};
+
+const TYPE_BADGE_CLASS: Record<string, string> = {
+    PRACTICE: 'badge-event-practice',
+    GAME: 'badge-event-game',
+    MEETING: 'badge-event-meeting',
+    OTHER: 'badge-event-other',
 };
 
 const statusColors: Record<string, string> = {
@@ -197,17 +205,21 @@ export default function SchedulePage() {
         <div className="page-content">
             <div className="page-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: '1 1 auto' }}>
-                    <h1 className="page-title">Schedule</h1>
+                    <h1 className="page-title page-title--gradient">Schedule</h1>
                     <p className="page-subtitle">Manage practices, games, and events</p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--surface-800)', padding: '0.25rem', borderRadius: '0.5rem' }}>
-                        <button className="btn btn-ghost" style={{ padding: '0.5rem 1rem' }} onClick={() => setCurrentDate(new Date(year, month - 1, 1))}>←</button>
+                    <div className="glass-subtle" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem' }}>
+                        <button className="btn btn-ghost btn-icon" style={{ width: 36, height: 36 }} onClick={() => setCurrentDate(new Date(year, month - 1, 1))} aria-label="Previous month">
+                            <ChevronLeft size={16} />
+                        </button>
                         <span style={{ fontWeight: 600, minWidth: '140px', textAlign: 'center' }}>
                             {MONTHS[month]} {year}
                         </span>
-                        <button className="btn btn-ghost" style={{ padding: '0.5rem 1rem' }} onClick={() => setCurrentDate(new Date(year, month + 1, 1))}>→</button>
+                        <button className="btn btn-ghost btn-icon" style={{ width: 36, height: 36 }} onClick={() => setCurrentDate(new Date(year, month + 1, 1))} aria-label="Next month">
+                            <ChevronRight size={16} />
+                        </button>
                     </div>
 
                     {isStaff && (
@@ -257,20 +269,27 @@ export default function SchedulePage() {
                                 className="calendar-day-cell"
                                 style={{
                                     padding: '0.5rem',
-                                    background: isToday ? 'rgba(59, 130, 246, 0.08)' : 'var(--surface-800)',
-                                    border: isToday ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid var(--surface-700)',
-                                    borderRadius: '0.5rem',
+                                    background: isToday
+                                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.10), rgba(20, 184, 166, 0.06))'
+                                        : 'rgba(15, 23, 42, 0.45)',
+                                    backdropFilter: 'blur(12px)',
+                                    WebkitBackdropFilter: 'blur(12px)',
+                                    border: isToday
+                                        ? '1px solid rgba(59, 130, 246, 0.40)'
+                                        : '1px solid rgba(148, 163, 184, 0.08)',
+                                    borderRadius: 'var(--radius-md)',
+                                    boxShadow: isToday ? '0 0 0 1px rgba(59, 130, 246, 0.15), 0 0 18px rgba(59, 130, 246, 0.18)' : 'none',
                                     cursor: isStaff ? 'pointer' : 'default',
-                                    transition: 'all 0.2s',
+                                    transition: 'all var(--transition-fast)',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    gap: '4px'
+                                    gap: '4px',
                                 }}
                             >
                                 <div className="calendar-day-header" style={{
                                     fontSize: '0.85rem',
                                     fontWeight: isToday ? 700 : 500,
-                                    color: isToday ? 'var(--primary-400)' : 'var(--text-primary)',
+                                    color: isToday ? 'var(--primary-300)' : 'var(--text-primary)',
                                     marginBottom: '0.25rem',
                                 }}>
                                     {day}
@@ -282,9 +301,9 @@ export default function SchedulePage() {
                                             onClick={(e) => handleEventClick(e, ev)}
                                             style={{
                                                 fontSize: '0.65rem',
-                                                padding: '2px 4px',
+                                                padding: '2px 6px',
                                                 borderRadius: '3px',
-                                                background: `${typeColors[ev.type]}20`,
+                                                background: `color-mix(in oklab, ${typeColors[ev.type]} 18%, transparent)`,
                                                 color: typeColors[ev.type],
                                                 whiteSpace: 'nowrap',
                                                 overflow: 'hidden',
@@ -326,7 +345,7 @@ export default function SchedulePage() {
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">New Event</h2>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)} aria-label="Close"><X size={18} /></button>
                         </div>
                         <form onSubmit={handleCreate}>
                             <div className="modal-body">
@@ -420,17 +439,9 @@ export default function SchedulePage() {
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                     {new Date(selectedEventRsvps.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                 </p>
-                                <div style={{
-                                    fontSize: '0.75rem',
-                                    padding: '2px 8px',
-                                    borderRadius: '4px',
-                                    background: `${typeColors[selectedEventRsvps.type]}20`,
-                                    color: typeColors[selectedEventRsvps.type],
-                                    display: 'inline-block',
-                                    marginTop: '0.5rem'
-                                }}>
+                                <span className={`badge ${TYPE_BADGE_CLASS[selectedEventRsvps.type] || 'badge-neutral'}`} style={{ marginTop: '0.5rem' }}>
                                     {selectedEventRsvps.type}
-                                </div>
+                                </span>
                             </div>
                             <button className="btn btn-ghost btn-icon" onClick={() => setSelectedEventRsvps(null)}>✕</button>
                         </div>
@@ -500,7 +511,7 @@ export default function SchedulePage() {
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                     {rsvps.map((rsvp) => (
-                                        <div key={rsvp.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', background: 'var(--surface-700)', borderRadius: '0.5rem' }}>
+                                        <div key={rsvp.id} className="glass-subtle" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
                                             <div className="avatar avatar-sm" style={{ background: getAvatarColor(rsvp.userName) }}>
                                                 {getInitials(rsvp.userName)}
                                             </div>

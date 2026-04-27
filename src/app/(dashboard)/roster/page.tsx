@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { ClipboardList, Search, Trash2, X } from 'lucide-react';
 
 interface Player {
     id: string;
@@ -100,25 +101,32 @@ export default function RosterPage() {
         p.teamName.toLowerCase().includes(filter.toLowerCase())
     );
 
-    const roleColors: Record<string, string> = {
-        COACH: '#3b82f6', PLAYER: '#14b8a6', PARENT: '#f59e0b', MANAGER: '#8b5cf6',
+    const ROLE_BADGE: Record<string, string> = {
+        ADMIN: 'badge-role-admin',
+        COACH: 'badge-role-coach',
+        PLAYER: 'badge-role-player',
+        PARENT: 'badge-role-parent',
+        MANAGER: 'badge-role-admin',
     };
 
     return (
         <div className="page-content">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Roster</h1>
+                    <h1 className="page-title page-title--gradient">Roster</h1>
                     <p className="page-subtitle">{players.length} members across all teams</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', width: '100%', maxWidth: '400px' }}>
-                    <input
-                        className="form-input"
-                        placeholder="🔍 Search players..."
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        style={{ flex: '1 1 auto', minWidth: '150px' }}
-                    />
+                    <div style={{ position: 'relative', flex: '1 1 auto', minWidth: '150px' }}>
+                        <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
+                        <input
+                            className="form-input"
+                            placeholder="Search players…"
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            style={{ paddingLeft: 38, width: '100%' }}
+                        />
+                    </div>
                     {isStaff && (
                         <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ flex: '1 1 auto', whiteSpace: 'nowrap', justifyContent: 'center' }}>
                             + Add Player
@@ -129,7 +137,7 @@ export default function RosterPage() {
 
             {filteredPlayers.length === 0 ? (
                 <div className="empty-state">
-                    <div className="empty-state__icon">🏃</div>
+                    <div className="empty-state__icon"><ClipboardList /></div>
                     <h3 className="empty-state__title">No Players Found</h3>
                     <p className="empty-state__description">
                         {players.length === 0
@@ -172,32 +180,20 @@ export default function RosterPage() {
                                         </div>
                                     </td>
                                     <td>
-                                        <span className="badge" style={{
-                                            background: `${roleColors[player.role]}20`,
-                                            color: roleColors[player.role],
-                                            border: `1px solid ${roleColors[player.role]}40`,
-                                        }}>
+                                        <span className={`badge ${ROLE_BADGE[player.role] || 'badge-neutral'}`}>
                                             {player.role}
                                         </span>
                                     </td>
                                     <td style={{ color: 'var(--text-secondary)' }}>{player.teamName}</td>
                                     <td style={{ color: 'var(--text-secondary)' }}>
                                         {player.category ? (
-                                            <span style={{
-                                                background: 'var(--surface-700)', padding: '2px 8px',
-                                                borderRadius: '4px', fontSize: '0.85rem',
-                                            }}>
-                                                {player.category}
-                                            </span>
+                                            <span className="badge badge-neutral">{player.category}</span>
                                         ) : '—'}
                                     </td>
                                     <td style={{ color: 'var(--text-secondary)' }}>{player.position || '—'}</td>
                                     <td>
                                         {player.jersey ? (
-                                            <span style={{
-                                                background: 'var(--surface-700)', padding: '2px 8px',
-                                                borderRadius: '4px', fontWeight: 600, fontSize: '0.85rem',
-                                            }}>
+                                            <span className="badge badge-neutral" style={{ fontWeight: 600 }}>
                                                 #{player.jersey}
                                             </span>
                                         ) : '—'}
@@ -211,9 +207,9 @@ export default function RosterPage() {
                                                 className="btn btn-ghost btn-icon"
                                                 aria-label={`Remove ${player.name}`}
                                                 onClick={() => setPendingRemove({ id: player.id, name: player.name })}
-                                                style={{ color: 'var(--danger-400)' }}
+                                                style={{ color: 'var(--text-tertiary)', width: 32, height: 32 }}
                                             >
-                                                🗑️
+                                                <Trash2 size={16} />
                                             </button>
                                         </td>
                                     )}
@@ -241,7 +237,7 @@ export default function RosterPage() {
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">Add Player</h2>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)} aria-label="Close"><X size={18} /></button>
                         </div>
                         <form onSubmit={handleCreate}>
                             <div className="modal-body">

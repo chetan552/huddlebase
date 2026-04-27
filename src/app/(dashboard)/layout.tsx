@@ -4,11 +4,12 @@ import React, { ReactNode, useState, useEffect, useCallback, useRef } from 'reac
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { useTheme } from '@/lib/useTheme';
 import { NAV_ITEMS } from '@/lib/constants';
 import {
   LayoutDashboard, Users, Calendar, ClipboardList,
   MessageCircle, CreditCard, Settings, Bell, Zap,
-  Menu, LogOut,
+  Menu, LogOut, ChevronLeft, X, Sun, Moon,
 } from 'lucide-react';
 
 interface Notification {
@@ -32,10 +33,18 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   '/settings':  <Settings       size={18} strokeWidth={1.75} />,
 };
 
+const ROLE_BADGE_CLASS: Record<string, string> = {
+  ADMIN: 'badge-role-admin',
+  COACH: 'badge-role-coach',
+  PLAYER: 'badge-role-player',
+  PARENT: 'badge-role-parent',
+};
+
 function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolean; setMobileMenuOpen: (v: boolean) => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -138,17 +147,25 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
           </Link>
 
           <div className="sidebar__header-actions">
+            {/* Theme Toggle */}
+            <button
+              className="sidebar__icon-btn"
+              onClick={toggleTheme}
+              title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+
             {/* Notification Bell */}
             <div ref={panelRef} style={{ position: 'relative' }}>
               <button
                 className="sidebar__icon-btn"
                 onClick={() => setShowNotifications(!showNotifications)}
                 title="Notifications"
+                aria-label="Notifications"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
+                <Bell size={16} />
                 {unreadCount > 0 && (
                   <span className="sidebar__badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
                 )}
@@ -208,14 +225,12 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
               className="sidebar__icon-btn hide-mobile"
               onClick={() => setCollapsed(!collapsed)}
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              <svg
-                width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              <ChevronLeft
+                size={16}
                 style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}
-              >
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
+              />
             </button>
 
             {/* Close (mobile) */}
@@ -223,10 +238,9 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
               className="sidebar__icon-btn hide-desktop"
               onClick={() => setMobileMenuOpen(false)}
               title="Close"
+              aria-label="Close"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+              <X size={16} />
             </button>
           </div>
         </div>
@@ -272,7 +286,11 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
               {!collapsed && (
                 <div className="sidebar__user-info">
                   <div className="sidebar__user-name">{user.name}</div>
-                  <div className="sidebar__user-role">{user.role?.toLowerCase()}</div>
+                  {user.role && (
+                    <span className={`badge ${ROLE_BADGE_CLASS[user.role] || 'badge-neutral'} sidebar__user-badge`}>
+                      {user.role.toLowerCase()}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -280,352 +298,14 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
               className="sidebar__logout"
               onClick={handleLogout}
               title="Log out"
+              aria-label="Log out"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
+              <LogOut size={15} />
               {!collapsed && <span>Log out</span>}
             </button>
           </div>
         )}
 
-        <style jsx>{`
-        .sidebar {
-          position: fixed;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: var(--sidebar-width);
-          background: var(--sidebar-bg, #111213);
-          border-right: 1px solid var(--sidebar-border, rgba(255,255,255,0.06));
-          display: flex;
-          flex-direction: column;
-          z-index: 50;
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sidebar--collapsed {
-          width: var(--sidebar-collapsed-width);
-        }
-        .sidebar-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.55);
-          backdrop-filter: blur(4px);
-          z-index: 40;
-          animation: fadeIn 0.2s ease;
-        }
-
-        /* Header */
-        .sidebar__header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 1rem;
-          height: 60px;
-          border-bottom: 1px solid var(--sidebar-border, rgba(255,255,255,0.06));
-          flex-shrink: 0;
-        }
-        .sidebar__logo {
-          display: flex;
-          align-items: center;
-          gap: 0.625rem;
-          text-decoration: none;
-          white-space: nowrap;
-          overflow: hidden;
-          min-width: 0;
-        }
-        .sidebar__logo-orb {
-          width: 28px;
-          height: 28px;
-          border-radius: 7px;
-          background: linear-gradient(135deg, #3b82f6, #14b8a6);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          box-shadow: 0 2px 8px rgba(59,130,246,0.3);
-        }
-        .sidebar__logo-text {
-          font-size: 0.9375rem;
-          font-weight: 700;
-          letter-spacing: -0.01em;
-          color: var(--text-primary);
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .sidebar__header-actions {
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-          flex-shrink: 0;
-        }
-        .sidebar__icon-btn {
-          width: 30px;
-          height: 30px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: none;
-          background: transparent;
-          color: var(--text-tertiary);
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.15s;
-          position: relative;
-          flex-shrink: 0;
-        }
-        .sidebar__icon-btn:hover {
-          background: var(--sidebar-hover-bg, rgba(255,255,255,0.07));
-          color: var(--text-primary);
-        }
-        .sidebar__badge {
-          position: absolute;
-          top: 3px;
-          right: 3px;
-          background: #ef4444;
-          color: white;
-          font-size: 0.5rem;
-          font-weight: 700;
-          min-width: 14px;
-          height: 14px;
-          border-radius: 7px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 2px;
-          line-height: 1;
-        }
-
-        /* Section Label — hidden */
-        .sidebar__section-label { display: none; }
-
-        /* Nav */
-        .sidebar__nav {
-          flex: 1;
-          padding: 0.75rem 0.75rem;
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          overflow-y: auto;
-          overflow-x: hidden;
-        }
-        .sidebar__link {
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.6rem 0.75rem;
-          border-radius: 8px;
-          color: var(--text-tertiary);
-          font-size: 0.875rem;
-          font-weight: 500;
-          transition: background 0.12s ease, color 0.12s ease;
-          position: relative;
-          text-decoration: none;
-          white-space: nowrap;
-          overflow: hidden;
-          line-height: 1;
-        }
-        .sidebar__link:hover {
-          background: var(--sidebar-hover-bg, rgba(255,255,255,0.06));
-          color: var(--text-primary);
-        }
-        .sidebar__link--active {
-          background: rgba(59,130,246,0.12);
-          color: var(--text-primary);
-          font-weight: 600;
-        }
-        .sidebar__link--active:hover {
-          background: rgba(59,130,246,0.16);
-        }
-        .sidebar__link-bar {
-          position: absolute;
-          left: 0;
-          top: 20%;
-          bottom: 20%;
-          width: 3px;
-          background: #3b82f6;
-          border-radius: 0 3px 3px 0;
-        }
-        .sidebar__link-icon {
-          flex-shrink: 0;
-          width: 20px;
-          height: 20px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--text-tertiary);
-          transition: color 0.12s;
-        }
-        .sidebar__link--active .sidebar__link-icon {
-          color: #60a5fa;
-        }
-        .sidebar__link:not(.sidebar__link--active):hover .sidebar__link-icon {
-          color: var(--text-secondary);
-        }
-        .sidebar__link-label {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          flex: 1;
-          letter-spacing: 0.01em;
-        }
-
-        /* Footer */
-        .sidebar__footer {
-          padding: 0.75rem;
-          border-top: 1px solid var(--sidebar-border, rgba(255,255,255,0.06));
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-        .sidebar__user {
-          display: flex;
-          align-items: center;
-          gap: 0.625rem;
-          padding: 0.5rem 0.625rem;
-          border-radius: 8px;
-          transition: background 0.12s;
-        }
-        .sidebar__user:hover {
-          background: var(--sidebar-hover-bg, rgba(255,255,255,0.04));
-        }
-        .sidebar__avatar-wrap {
-          position: relative;
-          flex-shrink: 0;
-        }
-        .sidebar__avatar {
-          width: 30px;
-          height: 30px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 0.7rem;
-          font-weight: 700;
-          border: 1.5px solid var(--sidebar-avatar-border, rgba(255,255,255,0.1));
-        }
-        .sidebar__avatar-status {
-          position: absolute;
-          bottom: -1px;
-          right: -1px;
-          width: 8px;
-          height: 8px;
-          background: #22c55e;
-          border-radius: 50%;
-          border: 2px solid var(--sidebar-bg, #111213);
-        }
-        .sidebar__user-info {
-          overflow: hidden;
-          flex: 1;
-          min-width: 0;
-        }
-        .sidebar__user-name {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .sidebar__user-role {
-          font-size: 0.65rem;
-          color: var(--text-tertiary);
-          text-transform: capitalize;
-          margin-top: 1px;
-          letter-spacing: 0.02em;
-        }
-        .sidebar__logout {
-          display: flex;
-          align-items: center;
-          gap: 0.625rem;
-          width: 100%;
-          padding: 0.5rem 0.625rem;
-          border: none;
-          background: transparent;
-          color: var(--text-tertiary);
-          font-size: 0.8rem;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: background 0.12s, color 0.12s;
-        }
-        .sidebar__logout:hover {
-          background: rgba(239,68,68,0.08);
-          color: #f87171;
-        }
-
-        /* Notification Panel */
-        .notif-panel {
-          position: absolute;
-          top: 38px;
-          left: 0;
-          width: 340px;
-          max-height: 440px;
-          background: var(--surface-800);
-          border: 1px solid var(--sidebar-border, rgba(255,255,255,0.08));
-          border-radius: 12px;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-          z-index: 100;
-          overflow: hidden;
-          animation: slideDown 0.15s ease;
-        }
-        .notif-panel__header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0.875rem 1rem;
-          border-bottom: 1px solid var(--sidebar-border, rgba(255,255,255,0.06));
-        }
-        .notif-panel__mark-read {
-          background: none;
-          border: none;
-          color: var(--primary-400);
-          font-size: 0.75rem;
-          font-weight: 600;
-          cursor: pointer;
-        }
-        .notif-panel__mark-read:hover { color: var(--primary-300); }
-        .notif-panel__list { max-height: 380px; overflow-y: auto; }
-        .notif-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.75rem;
-          padding: 0.75rem 1rem;
-          cursor: pointer;
-          transition: background 0.15s;
-          border-bottom: 1px solid var(--sidebar-border, rgba(255,255,255,0.04));
-        }
-        .notif-item:hover { background: var(--sidebar-hover-bg, rgba(255,255,255,0.04)); }
-        .notif-item--unread { background: rgba(59,130,246,0.05); }
-        .notif-item__icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
-        .notif-item__title { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
-        .notif-item__body { font-size: 0.75rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .notif-item__time { font-size: 0.65rem; color: var(--text-tertiary); margin-top: 2px; }
-        .notif-item__dot { width: 7px; height: 7px; border-radius: 50%; background: #3b82f6; flex-shrink: 0; margin-top: 6px; box-shadow: 0 0 5px rgba(59,130,246,0.6); }
-
-        .hide-desktop { display: none !important; }
-
-        /* Light mode — override sidebar CSS variables */
-        :global([data-theme="light"]) .sidebar {
-          --sidebar-bg: #f1f5f9;
-          --sidebar-border: rgba(0,0,0,0.08);
-          --sidebar-hover-bg: rgba(0,0,0,0.05);
-          --sidebar-avatar-border: rgba(0,0,0,0.12);
-          background: #f1f5f9;
-        }
-
-        @media (max-width: 768px) {
-          .sidebar {
-            transform: translateX(-100%);
-            width: 280px !important;
-          }
-          .sidebar--mobile-open { transform: translateX(0); }
-          .hide-mobile { display: none !important; }
-          .hide-desktop { display: flex !important; }
-        }
-      `}</style>
       </aside>
     </>
   );
@@ -708,35 +388,47 @@ function DashboardContent({ children }: { children: ReactNode }) {
           display: none;
           align-items: center;
           justify-content: space-between;
-          padding: 1rem;
-          background: var(--surface-800);
-          border-bottom: 1px solid var(--surface-700);
+          padding: var(--space-4);
+          background: rgba(10, 14, 26, 0.72);
+          backdrop-filter: blur(22px) saturate(140%);
+          -webkit-backdrop-filter: blur(22px) saturate(140%);
+          border-bottom: 1px solid var(--sidebar-border, rgba(148, 163, 184, 0.08));
           position: sticky;
           top: 0;
           z-index: 30;
         }
+        :global([data-theme="light"]) .mobile-header {
+          background: rgba(255, 255, 255, 0.78);
+        }
         .mobile-menu-btn {
           width: 40px;
           height: 40px;
-          background: var(--surface-700);
-          border: none;
-          border-radius: 8px;
+          background: rgba(148, 163, 184, 0.06);
+          border: 1px solid rgba(148, 163, 184, 0.10);
+          border-radius: var(--radius-md);
           color: var(--text-primary);
           font-size: 1.25rem;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
+          transition: background var(--transition-fast);
+        }
+        .mobile-menu-btn:hover {
+          background: rgba(148, 163, 184, 0.12);
         }
         .mobile-header-title {
-          font-weight: 800;
+          font-weight: var(--font-weight-extrabold);
           font-size: 1.1rem;
+          letter-spacing: -0.01em;
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          background: linear-gradient(135deg, #3b82f6, #14b8a6);
+          gap: var(--space-2);
+          background: var(--gradient-brand);
           -webkit-background-clip: text;
+          background-clip: text;
           -webkit-text-fill-color: transparent;
+          color: transparent;
         }
         
         .hide-desktop {

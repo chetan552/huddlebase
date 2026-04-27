@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { getAvatarColor, getInitials, timeAgo } from '@/lib/utils';
+import { MessageCircle, Send, ChevronLeft } from 'lucide-react';
 
 interface Message {
     id: string;
@@ -81,45 +82,60 @@ export default function ChatPage() {
         <div className="chat-container" style={{ display: 'flex', height: '100vh', overflow: 'hidden', width: '100%' }}>
             {/* Channel list */}
             <div className={`chat-sidebar ${showMobileSidebar ? 'chat-sidebar-mobile-visible' : 'chat-sidebar-mobile-hidden'}`} style={{
-                width: '260px', background: 'var(--surface-800)', borderRight: '1px solid var(--surface-700)',
+                width: '260px',
+                background: 'rgba(15, 23, 42, 0.45)',
+                backdropFilter: 'blur(16px) saturate(120%)',
+                WebkitBackdropFilter: 'blur(16px) saturate(120%)',
+                borderRight: '1px solid rgba(148, 163, 184, 0.08)',
                 display: 'flex', flexDirection: 'column', flexShrink: 0,
             }}>
-                <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid var(--surface-700)' }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>💬 Messages</h2>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
-                        Team channels
-                    </p>
+                <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid rgba(148, 163, 184, 0.08)', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                    <MessageCircle size={20} color="var(--primary-400)" />
+                    <div>
+                        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, letterSpacing: '-0.01em' }}>Messages</h2>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '0.125rem' }}>
+                            Team channels
+                        </p>
+                    </div>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
-                    {teams.map((team) => (
-                        <button
-                            key={team.id}
-                            onClick={() => {
-                                setActiveTeam(team.id);
-                                setShowMobileSidebar(false);
-                            }}
-                            style={{
-                                width: '100%', padding: '0.75rem', display: 'flex', alignItems: 'center',
-                                gap: '0.75rem', border: 'none', borderRadius: '0.625rem', cursor: 'pointer',
-                                transition: 'all 0.2s', textAlign: 'left',
-                                background: activeTeam === team.id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                                color: activeTeam === team.id ? 'var(--primary-400)' : 'var(--text-secondary)',
-                            }}
-                        >
-                            <div style={{
-                                width: 32, height: 32, borderRadius: '0.5rem', background: team.color,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: 'white', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0,
-                            }}>
-                                {team.name.charAt(0)}
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {team.name}
+                    {teams.map((team) => {
+                        const isActive = activeTeam === team.id;
+                        return (
+                            <button
+                                key={team.id}
+                                onClick={() => {
+                                    setActiveTeam(team.id);
+                                    setShowMobileSidebar(false);
+                                }}
+                                style={{
+                                    width: '100%', padding: '0.625rem 0.75rem', display: 'flex', alignItems: 'center',
+                                    gap: '0.75rem', border: '1px solid transparent', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                                    transition: 'all var(--transition-fast)', textAlign: 'left',
+                                    background: isActive
+                                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(20, 184, 166, 0.10))'
+                                        : 'transparent',
+                                    borderColor: isActive ? 'rgba(59, 130, 246, 0.25)' : 'transparent',
+                                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                    boxShadow: isActive ? '0 4px 14px rgba(59, 130, 246, 0.12)' : 'none',
+                                }}
+                            >
+                                <div style={{
+                                    width: 32, height: 32, borderRadius: '0.5rem', background: team.color,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    color: 'white', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0,
+                                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15)`,
+                                }}>
+                                    {team.name.charAt(0)}
                                 </div>
-                            </div>
-                        </button>
-                    ))}
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {team.name}
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -127,16 +143,18 @@ export default function ChatPage() {
             <div className={`chat-main ${!showMobileSidebar ? 'chat-main-mobile-visible' : 'chat-main-mobile-hidden'}`} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {/* Chat header */}
                 <div style={{
-                    padding: '1rem 1.5rem', borderBottom: '1px solid var(--surface-700)',
+                    padding: '1rem 1.5rem', borderBottom: '1px solid rgba(148, 163, 184, 0.08)',
                     display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    background: 'var(--surface-800)',
+                    background: 'rgba(15, 23, 42, 0.4)',
+                    backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
                 }}>
                     <button
                         className="mobile-back-btn"
                         aria-label="Back to channels"
                         onClick={() => setShowMobileSidebar(true)}
+                        style={{ width: 36, height: 36, border: 'none', borderRadius: 'var(--radius-md)', background: 'rgba(148, 163, 184, 0.08)', color: 'var(--text-primary)', cursor: 'pointer', alignItems: 'center', justifyContent: 'center' }}
                     >
-                        ←
+                        <ChevronLeft size={18} />
                     </button>
                     {activeTeamData && (
                         <>
@@ -144,6 +162,7 @@ export default function ChatPage() {
                                 width: 36, height: 36, borderRadius: '0.5rem', background: activeTeamData.color,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: 'white', fontWeight: 700, fontSize: '0.9rem',
+                                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 4px 10px ${activeTeamData.color}30`,
                             }}>
                                 {activeTeamData.name.charAt(0)}
                             </div>
@@ -159,13 +178,13 @@ export default function ChatPage() {
                 <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
                     {!activeTeam ? (
                         <div className="empty-state">
-                            <div className="empty-state__icon">💬</div>
+                            <div className="empty-state__icon"><MessageCircle /></div>
                             <h3 className="empty-state__title">Select a Team</h3>
                             <p className="empty-state__description">Choose a team channel from the sidebar to start chatting.</p>
                         </div>
                     ) : messages.length === 0 ? (
                         <div className="empty-state">
-                            <div className="empty-state__icon">👋</div>
+                            <div className="empty-state__icon"><MessageCircle /></div>
                             <h3 className="empty-state__title">No Messages Yet</h3>
                             <p className="empty-state__description">Be the first to send a message in this channel!</p>
                         </div>
@@ -193,9 +212,20 @@ export default function ChatPage() {
                                                 {msg.senderName} · {timeAgo(msg.createdAt)}
                                             </div>
                                             <div style={{
-                                                padding: '0.75rem 1rem', borderRadius: '1rem',
-                                                background: isOwn ? 'var(--primary-600)' : 'var(--surface-700)',
-                                                color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: 1.5,
+                                                padding: '0.625rem 0.875rem',
+                                                borderRadius: '1rem',
+                                                background: isOwn
+                                                    ? 'var(--gradient-brand)'
+                                                    : 'rgba(30, 41, 59, 0.55)',
+                                                backdropFilter: isOwn ? 'none' : 'blur(12px)',
+                                                WebkitBackdropFilter: isOwn ? 'none' : 'blur(12px)',
+                                                border: isOwn ? 'none' : '1px solid rgba(148, 163, 184, 0.08)',
+                                                color: isOwn ? 'white' : 'var(--text-primary)',
+                                                fontSize: '0.9rem',
+                                                lineHeight: 1.5,
+                                                boxShadow: isOwn
+                                                    ? '0 6px 18px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                                                    : '0 2px 8px rgba(0, 0, 0, 0.15)',
                                                 borderBottomRightRadius: isOwn ? '0.25rem' : '1rem',
                                                 borderBottomLeftRadius: isOwn ? '1rem' : '0.25rem',
                                             }}>
@@ -213,12 +243,14 @@ export default function ChatPage() {
                 {/* Message input */}
                 {activeTeam && (
                     <form onSubmit={handleSend} style={{
-                        padding: '1rem 1.5rem', borderTop: '1px solid var(--surface-700)',
-                        display: 'flex', gap: '0.75rem', background: 'var(--surface-800)',
+                        padding: '1rem 1.5rem', borderTop: '1px solid rgba(148, 163, 184, 0.08)',
+                        display: 'flex', gap: '0.75rem',
+                        background: 'rgba(15, 23, 42, 0.4)',
+                        backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
                     }}>
                         <input
                             className="form-input"
-                            placeholder="Type a message..."
+                            placeholder="Type a message…"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             style={{ flex: 1 }}
@@ -227,8 +259,9 @@ export default function ChatPage() {
                             type="submit"
                             className="btn btn-primary"
                             disabled={loading || !newMessage.trim()}
+                            aria-label="Send message"
                         >
-                            Send
+                            <Send size={16} />
                         </button>
                     </form>
                 )}

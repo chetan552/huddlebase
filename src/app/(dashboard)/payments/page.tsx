@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { CreditCard, Check, ShieldCheck, X, Loader2 } from 'lucide-react';
 
 interface Invoice {
     id: string;
@@ -16,11 +17,11 @@ interface Invoice {
     createdAt: string;
 }
 
-const statusStyles: Record<string, { color: string; bg: string }> = {
-    PAID: { color: '#4ade80', bg: 'rgba(34, 197, 94, 0.15)' },
-    PENDING: { color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.15)' },
-    OVERDUE: { color: '#f87171', bg: 'rgba(239, 68, 68, 0.15)' },
-    CANCELLED: { color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)' },
+const STATUS_BADGE_CLASS: Record<string, string> = {
+    PAID: 'badge-status-paid',
+    PENDING: 'badge-status-pending',
+    OVERDUE: 'badge-status-overdue',
+    CANCELLED: 'badge-status-canceled',
 };
 
 export default function PaymentsPage() {
@@ -166,7 +167,7 @@ export default function PaymentsPage() {
         <div className="page-content">
             <div className="page-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ flex: '1 1 auto' }}>
-                    <h1 className="page-title">Payments</h1>
+                    <h1 className="page-title page-title--gradient">Payments</h1>
                     <p className="page-subtitle">Manage team dues and invoices</p>
                 </div>
                 {isStaff && (
@@ -213,7 +214,7 @@ export default function PaymentsPage() {
             {/* Invoice Table */}
             {filteredInvoices.length === 0 ? (
                 <div className="empty-state">
-                    <div className="empty-state__icon">💵</div>
+                    <div className="empty-state__icon"><CreditCard /></div>
                     <h3 className="empty-state__title">No Invoices</h3>
                     <p className="empty-state__description">
                         {invoices.length === 0 ? 'Create your first invoice to start tracking payments.' : 'No invoices match this filter.'}
@@ -235,7 +236,6 @@ export default function PaymentsPage() {
                         </thead>
                         <tbody>
                             {filteredInvoices.map((inv) => {
-                                const style = statusStyles[inv.status] || statusStyles.PENDING;
                                 return (
                                     <tr key={inv.id}>
                                         <td>
@@ -251,10 +251,7 @@ export default function PaymentsPage() {
                                             {formatDate(inv.dueDate)}
                                         </td>
                                         <td>
-                                            <span className="badge" style={{
-                                                background: style.bg, color: style.color,
-                                                border: `1px solid ${style.color}40`,
-                                            }}>
+                                            <span className={`badge ${STATUS_BADGE_CLASS[inv.status] || 'badge-neutral'}`}>
                                                 {inv.status}
                                             </span>
                                         </td>
@@ -264,16 +261,17 @@ export default function PaymentsPage() {
                                                     <button
                                                         className="btn btn-ghost btn-sm"
                                                         onClick={() => handleMarkPaid(inv.id)}
-                                                        style={{ color: 'var(--success-400)' }}
+                                                        style={{ color: 'var(--success-400)', gap: 4 }}
                                                     >
-                                                        ✓ Mark Paid
+                                                        <Check size={14} /> Mark Paid
                                                     </button>
                                                 ) : (
                                                     <button
                                                         className="btn btn-primary btn-sm"
                                                         onClick={() => setCheckoutInvoice(inv)}
+                                                        style={{ gap: 4 }}
                                                     >
-                                                        💳 Pay Now
+                                                        <CreditCard size={14} /> Pay Now
                                                     </button>
                                                 )
                                             )}
@@ -292,7 +290,7 @@ export default function PaymentsPage() {
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">Create Invoice</h2>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)} aria-label="Close"><X size={18} /></button>
                         </div>
                         <form onSubmit={handleCreate}>
                             <div className="modal-body">
@@ -333,7 +331,7 @@ export default function PaymentsPage() {
                                             <label style={{
                                                 display: 'flex', alignItems: 'center', gap: '0.5rem',
                                                 padding: '0.5rem 0.75rem', cursor: 'pointer',
-                                                borderBottom: '1px solid var(--surface-600)', marginBottom: '0.25rem',
+                                                borderBottom: '1px solid rgba(148, 163, 184, 0.10)', marginBottom: '0.25rem',
                                                 fontWeight: 600, fontSize: '0.85rem',
                                             }}>
                                                 <input
@@ -344,10 +342,8 @@ export default function PaymentsPage() {
                                                 />
                                                 All Players ({uniqueFilteredPlayers.length})
                                             </label>
-                                            <div style={{
+                                            <div className="glass-subtle" style={{
                                                 maxHeight: 180, overflowY: 'auto',
-                                                border: '1px solid var(--surface-600)', borderRadius: '0.5rem',
-                                                background: 'var(--surface-700)',
                                             }}>
                                                 {uniqueFilteredPlayers.length === 0 ? (
                                                     <div style={{ padding: '0.75rem', color: 'var(--text-tertiary)', fontSize: '0.85rem', textAlign: 'center' }}>
@@ -357,7 +353,7 @@ export default function PaymentsPage() {
                                                     <label key={p.id} style={{
                                                         display: 'flex', alignItems: 'center', gap: '0.5rem',
                                                         padding: '0.5rem 0.75rem', cursor: 'pointer',
-                                                        borderBottom: '1px solid var(--surface-600)',
+                                                        borderBottom: '1px solid rgba(148, 163, 184, 0.06)',
                                                     }}>
                                                         <input
                                                             type="checkbox"
@@ -376,7 +372,7 @@ export default function PaymentsPage() {
                                             )}
                                         </>
                                     ) : (
-                                        <div style={{ padding: '0.75rem', color: 'var(--text-tertiary)', fontSize: '0.85rem', border: '1px solid var(--surface-600)', borderRadius: '0.5rem', background: 'var(--surface-700)', textAlign: 'center' }}>
+                                        <div className="glass-subtle" style={{ padding: '0.75rem', color: 'var(--text-tertiary)', fontSize: '0.85rem', textAlign: 'center' }}>
                                             Select a team first
                                         </div>
                                     )}
@@ -403,7 +399,7 @@ export default function PaymentsPage() {
                         </div>
                         <form onSubmit={handleCheckoutSubmit}>
                             <div className="modal-body">
-                                <div style={{ background: 'var(--surface-700)', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
+                                <div className="glass-subtle" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                         <span style={{ color: 'var(--text-secondary)' }}>Invoice for</span>
                                         <span style={{ fontWeight: 600 }}>{checkoutInvoice.playerName}</span>
@@ -412,7 +408,7 @@ export default function PaymentsPage() {
                                         <span style={{ color: 'var(--text-secondary)' }}>Item</span>
                                         <span style={{ fontWeight: 600 }}>{checkoutInvoice.title}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--surface-600)', paddingTop: '1rem', fontSize: '1.2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(148, 163, 184, 0.15)', paddingTop: '1rem', fontSize: '1.2rem' }}>
                                         <span style={{ fontWeight: 600 }}>Total</span>
                                         <span style={{ fontWeight: 800 }}>{formatCurrency(checkoutInvoice.amount)}</span>
                                     </div>
@@ -421,8 +417,8 @@ export default function PaymentsPage() {
                                 <div className="form-group">
                                     <label className="form-label">Card Number</label>
                                     <div style={{ position: 'relative' }}>
-                                        <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>💳</div>
-                                        <input className="form-input" style={{ paddingLeft: '2.5rem', fontFamily: 'monospace', letterSpacing: '2px' }} placeholder="0000 0000 0000 0000" required maxLength={19} />
+                                        <CreditCard size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
+                                        <input className="form-input" style={{ paddingLeft: '2.5rem', fontFamily: 'ui-monospace, SFMono-Regular, monospace', letterSpacing: '0.1em' }} placeholder="0000 0000 0000 0000" required maxLength={19} />
                                     </div>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -439,13 +435,14 @@ export default function PaymentsPage() {
                                     <label className="form-label">Name on Card</label>
                                     <input className="form-input" placeholder="Jane Doe" required />
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '1rem', justifyContent: 'center' }}>
-                                    <span>🔒 This is a simulated secure checkout.</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '1rem', justifyContent: 'center' }}>
+                                    <ShieldCheck size={14} color="var(--success-400)" />
+                                    <span>This is a simulated secure checkout.</span>
                                 </div>
                             </div>
                             <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
                                 <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem' }} disabled={checkoutLoading}>
-                                    {checkoutLoading ? 'Processing...' : `Pay ${formatCurrency(checkoutInvoice.amount)}`}
+                                    {checkoutLoading ? (<><Loader2 size={16} className="animate-spin" /> Processing…</>) : `Pay ${formatCurrency(checkoutInvoice.amount)}`}
                                 </button>
                             </div>
                         </form>
