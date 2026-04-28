@@ -131,6 +131,17 @@ export function rsvpStatusStyle(status: string): { color: string; bg: string; la
     return styles[status] || styles.PENDING;
 }
 
+// Serialize an array of objects to CSV string
+export function toCSV(rows: Record<string, unknown>[], columns: { key: string; header: string }[]): string {
+    const escape = (v: unknown) => {
+        const s = v == null ? '' : String(v);
+        return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = columns.map((c) => c.header).join(',');
+    const body = rows.map((row) => columns.map((c) => escape(row[c.key])).join(',')).join('\n');
+    return `${header}\n${body}`;
+}
+
 // Invoice status styling
 export function invoiceStatusStyle(status: string): { color: string; bg: string; label: string } {
     const styles: Record<string, { color: string; bg: string; label: string }> = {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { toCSV } from '@/lib/utils';
 
 export async function GET(req: NextRequest) {
     try {
@@ -58,6 +59,25 @@ export async function GET(req: NextRequest) {
             teamName: i.team.name,
             createdAt: i.createdAt.toISOString(),
         }));
+
+        if (req.nextUrl.searchParams.get('format') === 'csv') {
+            const csv = toCSV(data, [
+                { key: 'teamName', header: 'Team' },
+                { key: 'playerName', header: 'Player' },
+                { key: 'title', header: 'Title' },
+                { key: 'description', header: 'Description' },
+                { key: 'amount', header: 'Amount' },
+                { key: 'status', header: 'Status' },
+                { key: 'dueDate', header: 'Due Date' },
+                { key: 'createdAt', header: 'Created At' },
+            ]);
+            return new NextResponse(csv, {
+                headers: {
+                    'Content-Type': 'text/csv',
+                    'Content-Disposition': 'attachment; filename="invoices.csv"',
+                },
+            });
+        }
 
         return NextResponse.json({ success: true, data });
     } catch (error) {

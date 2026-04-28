@@ -146,26 +146,26 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
 
             {/* Stat Cards */}
             <div className="grid-stats">
-                <div className="stat-card stat-card--primary">
+                <Link href="/teams" className="stat-card stat-card--primary card-interactive" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
                     <div className="stat-card__label">Teams</div>
                     <div className="stat-card__value">{teams.length}</div>
                     <div className="stat-card__change stat-card__change--up">Active this season</div>
-                </div>
-                <div className="stat-card stat-card--accent">
+                </Link>
+                <Link href="/roster" className="stat-card stat-card--accent card-interactive" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
                     <div className="stat-card__label">Players</div>
                     <div className="stat-card__value">{rosterCount ?? '—'}</div>
                     <div className="stat-card__change">Across all teams</div>
-                </div>
-                <div className="stat-card stat-card--success">
+                </Link>
+                <Link href="/schedule" className="stat-card stat-card--success card-interactive" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
                     <div className="stat-card__label">Upcoming Events</div>
                     <div className="stat-card__value">{upcomingEvents.length}</div>
                     <div className="stat-card__change">Scheduled ahead</div>
-                </div>
-                <div className="stat-card stat-card--warning">
+                </Link>
+                <Link href="/payments" className="stat-card stat-card--warning card-interactive" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
                     <div className="stat-card__label">Pending Payments</div>
                     <div className="stat-card__value">{pendingInvoiceCount ?? '—'}</div>
                     <div className="stat-card__change stat-card__change--down">Awaiting payment</div>
-                </div>
+                </Link>
             </div>
 
             {/* Two-column */}

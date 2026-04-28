@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { sendEmail, eventCreatedEmail } from '@/lib/email';
 
 export async function GET(req: NextRequest) {
     try {
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
         // Notify team members
         const members = await prisma.teamMember.findMany({
             where: { teamId, userId: { not: user.id } },
-            select: { userId: true },
+            include: { user: { select: { email: true } } },
         });
         if (members.length > 0) {
             await prisma.notification.createMany({
@@ -91,6 +92,23 @@ export async function POST(req: NextRequest) {
                     link: `/schedule`,
                 })),
             });
+
+            // Send emails
+            const emails = members.map((m) => m.user.email).filter(Boolean) as string[];
+            if (emails.length > 0) {
+                const html = eventCreatedEmail({
+                    eventTitle: title,
+                    eventType: type || 'PRACTICE',
+                    teamName: event.team.name,
+                    startTime: event.startTime.toISOString(),
+                    location: event.location,
+                });
+                await sendEmail({
+                    to: emails,
+                    subject: `New ${(type || 'PRACTICE').toLowerCase()}: ${title}`,
+                    html,
+                });
+            }
         }
 
         return NextResponse.json({

@@ -11,6 +11,8 @@
     "vercel-build": "prisma migrate deploy && next build"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
+    "@google/genai": "^1.50.1",
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
     "chart.js": "^4.5.1",
@@ -20,6 +22,7 @@
     "react": "19.2.3",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.3",
+    "resend": "^6.12.2",
     "uuid": "^13.0.0"
   },
   "prisma": {

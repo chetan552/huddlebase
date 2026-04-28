@@ -73,6 +73,15 @@ export default function SchedulePage() {
     const [loadingRsvps, setLoadingRsvps] = useState(false);
     const [children, setChildren] = useState<Array<{ id: string; name: string }>>([]);
     const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+    const [attendance, setAttendance] = useState<Array<{
+        userId: string;
+        userName: string;
+        userAvatar: string | null;
+        present: boolean | null;
+        lateReason: string | null;
+    }>>([]);
+    const [attendanceSaving, setAttendanceSaving] = useState(false);
+    const [eventModalTab, setEventModalTab] = useState<'rsvps' | 'attendance'>('rsvps');
     const searchParams = useSearchParams();
     const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
     const isParent = user?.role === 'PARENT';
@@ -132,10 +141,40 @@ export default function SchedulePage() {
         setLoadingRsvps(false);
     };
 
+    const fetchAttendance = async (eventId: string) => {
+        try {
+            const res = await fetch(`/api/events/${eventId}/attendance`);
+            const data = await res.json();
+            if (data.success) setAttendance(data.data);
+        } catch (err) { console.error('Failed to fetch attendance:', err); }
+    };
+
+    const saveAttendance = async () => {
+        if (!selectedEventRsvps) return;
+        setAttendanceSaving(true);
+        try {
+            const res = await fetch(`/api/events/${selectedEventRsvps.id}/attendance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    records: attendance.map((a) => ({
+                        userId: a.userId,
+                        present: a.present === true,
+                        lateReason: a.lateReason,
+                    })),
+                }),
+            });
+            if (res.ok) fetchAttendance(selectedEventRsvps.id);
+        } catch (err) { console.error('Failed to save attendance:', err); }
+        setAttendanceSaving(false);
+    };
+
     const handleEventClick = (e: React.MouseEvent, ev: Event) => {
         e.stopPropagation();
         setSelectedEventRsvps(ev);
+        setEventModalTab('rsvps');
         fetchRsvps(ev.id);
+        if (isStaff) fetchAttendance(ev.id);
     };
 
     const handleCancelEvent = async () => {
@@ -182,6 +221,7 @@ export default function SchedulePage() {
             if (evt) {
                 setSelectedEventRsvps(evt);
                 fetchRsvps(evt.id);
+                if (isStaff) fetchAttendance(evt.id);
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -635,32 +675,124 @@ export default function SchedulePage() {
                                 </div>
                             )}
 
-                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Team RSVPs</h3>
-                            {loadingRsvps ? (
-                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading...</div>
-                            ) : rsvps.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No RSVPs yet.</div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    {rsvps.map((rsvp) => (
-                                        <div key={rsvp.id} className="glass-subtle" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
-                                            <div className="avatar avatar-sm" style={{ background: getAvatarColor(rsvp.userName) }}>
-                                                {getInitials(rsvp.userName)}
-                                            </div>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{rsvp.userName}</div>
-                                                {rsvp.note && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>&quot;{rsvp.note}&quot;</div>}
-                                            </div>
-                                            <div style={{
-                                                fontSize: '0.75rem', fontWeight: 600, padding: '2px 8px', borderRadius: '1rem',
-                                                color: statusColors[rsvp.status] || 'var(--text-secondary)',
-                                                background: `${statusColors[rsvp.status] || 'var(--surface-600)'}20`,
-                                            }}>
-                                                {rsvp.status.replace('_', ' ')}
-                                            </div>
-                                        </div>
+                            {/* Tabs */}
+                            {isStaff && !selectedEventRsvps.isCancelled && (
+                                <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--surface-600)' }}>
+                                    {(['rsvps', 'attendance'] as const).map((tab) => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setEventModalTab(tab)}
+                                            style={{
+                                                padding: '0.5rem 0.875rem',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 600,
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: eventModalTab === tab ? 'var(--primary-400)' : 'var(--text-secondary)',
+                                                borderBottom: eventModalTab === tab ? '2px solid var(--primary-400)' : '2px solid transparent',
+                                                cursor: 'pointer',
+                                                marginBottom: '-1px',
+                                                textTransform: 'capitalize',
+                                            }}
+                                        >
+                                            {tab}
+                                        </button>
                                     ))}
                                 </div>
+                            )}
+
+                            {/* RSVPs tab */}
+                            {(eventModalTab === 'rsvps' || !isStaff || selectedEventRsvps.isCancelled) && (
+                                <>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Team RSVPs</h3>
+                                    {loadingRsvps ? (
+                                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading...</div>
+                                    ) : rsvps.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No RSVPs yet.</div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {rsvps.map((rsvp) => (
+                                                <div key={rsvp.id} className="glass-subtle" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
+                                                    <div className="avatar avatar-sm" style={{ background: getAvatarColor(rsvp.userName) }}>
+                                                        {getInitials(rsvp.userName)}
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{rsvp.userName}</div>
+                                                        {rsvp.note && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>&quot;{rsvp.note}&quot;</div>}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem', fontWeight: 600, padding: '2px 8px', borderRadius: '1rem',
+                                                        color: statusColors[rsvp.status] || 'var(--text-secondary)',
+                                                        background: `${statusColors[rsvp.status] || 'var(--surface-600)'}20`,
+                                                    }}>
+                                                        {rsvp.status.replace('_', ' ')}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {/* Attendance tab */}
+                            {isStaff && eventModalTab === 'attendance' && !selectedEventRsvps.isCancelled && (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Attendance</h3>
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            onClick={saveAttendance}
+                                            disabled={attendanceSaving}
+                                        >
+                                            {attendanceSaving ? 'Saving...' : 'Save'}
+                                        </button>
+                                    </div>
+                                    {attendance.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No team members found.</div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {attendance.map((att) => (
+                                                <div key={att.userId} className="glass-subtle" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
+                                                    <div className="avatar avatar-sm" style={{ background: getAvatarColor(att.userName) }}>
+                                                        {getInitials(att.userName)}
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: '0.9rem' }}>
+                                                        {att.userName}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                                        {[
+                                                            { key: true, label: 'Present', color: 'var(--success-400)' },
+                                                            { key: false, label: 'Absent', color: 'var(--danger-400)' },
+                                                        ].map((opt) => (
+                                                            <button
+                                                                key={String(opt.key)}
+                                                                onClick={() => {
+                                                                    setAttendance((prev) =>
+                                                                        prev.map((a) =>
+                                                                            a.userId === att.userId ? { ...a, present: opt.key } : a
+                                                                        )
+                                                                    );
+                                                                }}
+                                                                style={{
+                                                                    padding: '0.375rem 0.625rem',
+                                                                    borderRadius: '0.375rem',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: 600,
+                                                                    border: '1px solid var(--surface-600)',
+                                                                    background: att.present === opt.key ? `${opt.color}20` : 'var(--surface-700)',
+                                                                    color: att.present === opt.key ? opt.color : 'var(--text-primary)',
+                                                                    cursor: 'pointer',
+                                                                }}
+                                                            >
+                                                                {opt.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

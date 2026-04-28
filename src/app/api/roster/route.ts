@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { getSessionUser } from '@/lib/session';
+import { toCSV } from '@/lib/utils';
 
 export async function GET(req: NextRequest) {
     try {
@@ -37,6 +38,25 @@ export async function GET(req: NextRequest) {
             teamId: m.teamId,
             teamName: m.team.name,
         }));
+
+        if (req.nextUrl.searchParams.get('format') === 'csv') {
+            const csv = toCSV(data, [
+                { key: 'teamName', header: 'Team' },
+                { key: 'userName', header: 'Name' },
+                { key: 'userEmail', header: 'Email' },
+                { key: 'phone', header: 'Phone' },
+                { key: 'role', header: 'Role' },
+                { key: 'jerseyNumber', header: 'Jersey' },
+                { key: 'position', header: 'Position' },
+                { key: 'category', header: 'Category' },
+            ]);
+            return new NextResponse(csv, {
+                headers: {
+                    'Content-Type': 'text/csv',
+                    'Content-Disposition': 'attachment; filename="roster.csv"',
+                },
+            });
+        }
 
         return NextResponse.json({ success: true, data });
     } catch (error) {

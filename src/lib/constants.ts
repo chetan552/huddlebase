@@ -82,6 +82,8 @@ export const NAV_ITEMS = [
     { label: 'Roster', href: '/roster', icon: '🏃' },
     { label: 'Chat', href: '/chat', icon: '💬' },
     { label: 'Payments', href: '/payments', icon: '💵' },
+    { label: 'Analytics', href: '/analytics', icon: '📈' },
+    { label: 'Practice Plan', href: '/practice-plan', icon: '🏋️' },
     { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 
@@ -90,5 +92,5 @@ export const SPORTS = [
     'Soccer', 'Basketball', 'Baseball', 'Football', 'Hockey',
     'Volleyball', 'Tennis', 'Swimming', 'Track & Field', 'Lacrosse',
     'Softball', 'Wrestling', 'Golf', 'Gymnastics', 'Cheerleading',
-    'Rugby', 'Cricket', 'Water Polo', 'Field Hockey', 'Other',
+    'Rugby', 'Cricket', 'Water Polo', 'Field Hockey', 'Table Tennis', 'Other',
 ];

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { CreditCard, Check, ShieldCheck, X, Loader2 } from 'lucide-react';
+import { CreditCard, Check, Download, ShieldCheck, X, Loader2 } from 'lucide-react';
 
 interface Invoice {
     id: string;
@@ -170,11 +170,21 @@ export default function PaymentsPage() {
                     <h1 className="page-title page-title--gradient">Payments</h1>
                     <p className="page-subtitle">Manage team dues and invoices</p>
                 </div>
-                {isStaff && (
-                    <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ whiteSpace: 'nowrap' }}>
-                        + Create Invoice
-                    </button>
-                )}
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <a
+                        href="/api/invoices?format=csv"
+                        download="invoices.csv"
+                        className="btn btn-ghost"
+                        style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
+                    >
+                        <Download size={15} /> Export CSV
+                    </a>
+                    {isStaff && (
+                        <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ whiteSpace: 'nowrap' }}>
+                            + Create Invoice
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Summary Cards */}

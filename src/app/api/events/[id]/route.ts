@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { sendEmail, eventCancelledEmail } from '@/lib/email';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -49,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         if (isCancelled) {
             const members = await prisma.teamMember.findMany({
                 where: { teamId: event.teamId, userId: { not: user.id } },
-                select: { userId: true },
+                include: { user: { select: { email: true } } },
             });
             if (members.length > 0) {
                 await prisma.notification.createMany({
@@ -61,6 +62,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
                         link: `/schedule`,
                     })),
                 });
+
+                const emails = members.map((m) => m.user.email).filter(Boolean) as string[];
+                if (emails.length > 0) {
+                    const html = eventCancelledEmail({
+                        eventTitle: event.title,
+                        eventType: event.type,
+                        teamName: event.team.name,
+                        startTime: event.startTime.toISOString(),
+                    });
+                    await sendEmail({
+                        to: emails,
+                        subject: `Cancelled: ${event.title}`,
+                        html,
+                    });
+                }
             }
         }
 

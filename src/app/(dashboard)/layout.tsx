@@ -9,7 +9,7 @@ import { NAV_ITEMS } from '@/lib/constants';
 import {
   LayoutDashboard, Users, Calendar, ClipboardList,
   MessageCircle, CreditCard, Settings, Bell, Zap,
-  Menu, LogOut, ChevronLeft, X, Sun, Moon,
+  BarChart3, Sparkles, Menu, LogOut, ChevronLeft, X, Sun, Moon,
 } from 'lucide-react';
 
 interface Notification {
@@ -30,7 +30,9 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   '/roster':    <ClipboardList  size={18} strokeWidth={1.75} />,
   '/chat':      <MessageCircle  size={18} strokeWidth={1.75} />,
   '/payments':  <CreditCard     size={18} strokeWidth={1.75} />,
-  '/settings':  <Settings       size={18} strokeWidth={1.75} />,
+  '/analytics':     <BarChart3  size={18} strokeWidth={1.75} />,
+  '/practice-plan': <Sparkles  size={18} strokeWidth={1.75} />,
+  '/settings':      <Settings  size={18} strokeWidth={1.75} />,
 };
 
 const ROLE_BADGE_CLASS: Record<string, string> = {
