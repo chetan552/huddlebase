@@ -252,7 +252,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
 
         {/* Navigation */}
         <nav className="sidebar__nav">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.roles || (user?.role && item.roles.includes(user.role))).map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             const icon = NAV_ICONS[item.href];
             const label = item.label === 'Teams' && (user?.role === 'PARENT' || user?.role === 'PLAYER') ? 'My Teams' : item.label;

@@ -82,8 +82,8 @@ export const NAV_ITEMS = [
     { label: 'Roster', href: '/roster', icon: '🏃' },
     { label: 'Chat', href: '/chat', icon: '💬' },
     { label: 'Payments', href: '/payments', icon: '💵' },
-    { label: 'Analytics', href: '/analytics', icon: '📈' },
-    { label: 'Practice Plan', href: '/practice-plan', icon: '🏋️' },
+    { label: 'Analytics', href: '/analytics', icon: '📈', roles: ['ADMIN', 'COACH'] },
+    { label: 'Practice Plan', href: '/practice-plan', icon: '🏋️', roles: ['ADMIN', 'COACH'] },
     { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 
