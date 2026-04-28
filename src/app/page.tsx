@@ -53,7 +53,6 @@ const FEATURES = [
     color: '#a855f7',
     title: 'AI Practice Plans',
     description: 'Generate fully structured, sport-specific practice plans in seconds. Drills, progressions, coaching cues, and cool-downs — ready to run.',
-    badge: 'Powered by Claude AI',
     highlight: true,
   },
   {
@@ -235,7 +234,7 @@ export default function LandingPage() {
                 background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)',
                 color: '#c084fc', fontSize: '0.78rem', fontWeight: 600, marginBottom: '1.5rem',
               }}>
-                <Sparkles size={13} /> Powered by Claude AI
+    
               </span>
               <h2 style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1.2, marginBottom: '1.25rem' }}>
                 Practice plans in seconds,<br />
