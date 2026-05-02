@@ -8,6 +8,7 @@ import { EVENT_TYPE_COLORS } from '@/lib/constants';
 
 import ParentDashboard from './components/ParentDashboard';
 import PlayerDashboard from './components/PlayerDashboard';
+import PendingTasks from './components/PendingTasks';
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -205,6 +206,9 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
                         </div>
                     )}
                 </div>
+
+                {/* Pending Tasks */}
+                {isStaff && <PendingTasks />}
 
                 {/* Announcements */}
                 <div className="card">
