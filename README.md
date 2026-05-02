@@ -33,6 +33,19 @@
 
 ---
 
+## Screenshots
+
+| | | |
+|---|---|---|
+| [![Dashboard](public/screenshots/dashboard.png)](public/screenshots/dashboard.png) | [![Teams](public/screenshots/teams.png)](public/screenshots/teams.png) | [![Schedule](public/screenshots/schedule.png)](public/screenshots/schedule.png) |
+| **Dashboard** | **Teams** | **Schedule** |
+| [![Roster](public/screenshots/roster.png)](public/screenshots/roster.png) | [![Chat](public/screenshots/chat.png)](public/screenshots/chat.png) | [![Payments](public/screenshots/payments.png)](public/screenshots/payments.png) |
+| **Roster** | **Chat** | **Payments** |
+| [![Analytics](public/screenshots/analytics.png)](public/screenshots/analytics.png) | [![Practice Plan](public/screenshots/practice-plan.png)](public/screenshots/practice-plan.png) | |
+| **Analytics** | **AI Practice Plan** | |
+
+---
+
 ## Tech Stack
 
 ### Web App
