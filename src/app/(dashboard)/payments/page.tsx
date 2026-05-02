@@ -402,23 +402,23 @@ export default function PaymentsPage() {
             {/* Simulated Checkout Modal */}
             {checkoutInvoice && (
                 <div className="modal-overlay" onClick={() => setCheckoutInvoice(null)}>
-                    <div className="modal" style={{ maxWidth: 450 }} onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
                             <h2 className="modal-title">Complete Payment</h2>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setCheckoutInvoice(null)}>✕</button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setCheckoutInvoice(null)} aria-label="Close"><X size={18} /></button>
                         </div>
                         <form onSubmit={handleCheckoutSubmit}>
                             <div className="modal-body">
-                                <div className="glass-subtle" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <div className="glass-subtle" style={{ padding: '1rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.25rem' }}>
                                         <span style={{ color: 'var(--text-secondary)' }}>Invoice for</span>
                                         <span style={{ fontWeight: 600 }}>{checkoutInvoice.playerName}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.25rem' }}>
                                         <span style={{ color: 'var(--text-secondary)' }}>Item</span>
                                         <span style={{ fontWeight: 600 }}>{checkoutInvoice.title}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(148, 163, 184, 0.15)', paddingTop: '1rem', fontSize: '1.2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(148, 163, 184, 0.15)', paddingTop: '1rem', fontSize: '1.2rem', flexWrap: 'wrap', gap: '0.25rem' }}>
                                         <span style={{ fontWeight: 600 }}>Total</span>
                                         <span style={{ fontWeight: 800 }}>{formatCurrency(checkoutInvoice.amount)}</span>
                                     </div>
@@ -428,30 +428,30 @@ export default function PaymentsPage() {
                                     <label className="form-label">Card Number</label>
                                     <div style={{ position: 'relative' }}>
                                         <CreditCard size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
-                                        <input className="form-input" style={{ paddingLeft: '2.5rem', fontFamily: 'ui-monospace, SFMono-Regular, monospace', letterSpacing: '0.1em' }} placeholder="0000 0000 0000 0000" required maxLength={19} />
+                                        <input className="form-input" style={{ paddingLeft: '2.5rem', fontFamily: 'ui-monospace, SFMono-Regular, monospace', letterSpacing: '0.1em' }} placeholder="0000 0000 0000 0000" required maxLength={19} inputMode="numeric" autoComplete="cc-number" />
                                     </div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="modal-form-row">
                                     <div className="form-group">
                                         <label className="form-label">Expiry (MM/YY)</label>
-                                        <input className="form-input" placeholder="MM/YY" required maxLength={5} />
+                                        <input className="form-input" placeholder="MM/YY" required maxLength={5} inputMode="numeric" autoComplete="cc-exp" />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">CVC</label>
-                                        <input className="form-input" type="password" placeholder="123" required maxLength={4} />
+                                        <input className="form-input form-input-cvc" type="password" placeholder="123" required maxLength={4} inputMode="numeric" autoComplete="cc-csc" />
                                     </div>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Name on Card</label>
-                                    <input className="form-input" placeholder="Jane Doe" required />
+                                    <input className="form-input" placeholder="Jane Doe" required autoComplete="cc-name" />
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '1rem', justifyContent: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', textAlign: 'center' }}>
                                     <ShieldCheck size={14} color="var(--success-400)" />
                                     <span>This is a simulated secure checkout.</span>
                                 </div>
                             </div>
-                            <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
-                                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem' }} disabled={checkoutLoading}>
+                            <div className="modal-footer">
+                                <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem' }} disabled={checkoutLoading}>
                                     {checkoutLoading ? (<><Loader2 size={16} className="animate-spin" /> Processing…</>) : `Pay ${formatCurrency(checkoutInvoice.amount)}`}
                                 </button>
                             </div>

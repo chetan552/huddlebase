@@ -439,6 +439,10 @@ button {
   color: var(--text-tertiary);
 }
 
+.form-input-cvc {
+  width: 80px;
+}
+
 .form-textarea {
   min-height: 100px;
   resize: vertical;
@@ -796,6 +800,42 @@ button {
   justify-content: flex-end;
   gap: var(--space-3);
   border-top: 1px solid var(--surface-700);
+}
+
+.modal-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 480px) {
+  .modal {
+    width: 95%;
+    padding: 0;
+  }
+
+  .modal-header {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+  }
+
+  .modal-body {
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .modal-footer {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    flex-direction: column;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-form-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ============================================
