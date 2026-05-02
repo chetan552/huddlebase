@@ -65,6 +65,91 @@ export function eventCreatedEmail({
     `;
 }
 
+export function announcementEmail({
+    title,
+    body,
+    teamName,
+    priority,
+}: {
+    title: string;
+    body: string;
+    teamName: string;
+    priority: string;
+}) {
+    const priorityColors: Record<string, string> = {
+        URGENT: '#dc2626',
+        HIGH: '#ea580c',
+        NORMAL: '#3b82f6',
+        LOW: '#64748b',
+    };
+    const borderColor = priorityColors[priority] || priorityColors.NORMAL;
+
+    return `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1e293b;">
+            <div style="border-left: 4px solid ${borderColor}; padding-left: 16px; margin-bottom: 16px;">
+                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: ${borderColor};">${priority}</span>
+                <h2 style="margin: 4px 0 0; font-size: 20px;">${title}</h2>
+            </div>
+            <p style="margin: 0 0 8px; color: #64748b;">New announcement in <strong>${teamName}</strong></p>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <p style="margin: 0; line-height: 1.6;">${body}</p>
+            </div>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://huddlebase.com'}/teams" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600;">View Team</a>
+        </div>
+    `;
+}
+
+export function newMessageEmail({
+    teamName,
+    senderName,
+    messagePreview,
+}: {
+    teamName: string;
+    senderName: string;
+    messagePreview: string;
+}) {
+    return `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1e293b;">
+            <h2 style="margin: 0 0 8px; font-size: 20px;">New message in ${teamName}</h2>
+            <p style="margin: 0 0 16px; color: #64748b;"><strong>${senderName}</strong> sent a message:</p>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 16px; font-style: italic; color: #475569;">
+                "${messagePreview}"
+            </div>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://huddlebase.com'}/chat" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600;">Open Chat</a>
+        </div>
+    `;
+}
+
+export function invoiceCreatedEmail({
+    title,
+    amount,
+    dueDate,
+    teamName,
+}: {
+    title: string;
+    amount: number;
+    dueDate: string;
+    teamName: string;
+}) {
+    const due = new Date(dueDate).toLocaleDateString([], {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+    });
+
+    return `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1e293b;">
+            <h2 style="margin: 0 0 8px; font-size: 20px;">New invoice: ${title}</h2>
+            <p style="margin: 0 0 16px; color: #64748b;">A new invoice has been added for <strong>${teamName}</strong>.</p>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <div style="margin-bottom: 8px;"><strong>Amount:</strong> $${amount.toFixed(2)}</div>
+                <div><strong>Due date:</strong> ${due}</div>
+            </div>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://huddlebase.com'}/payments" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600;">View Payments</a>
+        </div>
+    `;
+}
+
 export function eventCancelledEmail({
     eventTitle,
     eventType,

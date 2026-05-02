@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { sendEmail, announcementEmail } from '@/lib/email';
 
 export async function GET(req: NextRequest) {
     const user = getSessionUser(req);
@@ -86,6 +87,38 @@ export async function POST(req: NextRequest) {
                 team: { select: { name: true, color: true } },
             },
         });
+
+        // Notify team members
+        const members = await prisma.teamMember.findMany({
+            where: { teamId, userId: { not: user.id } },
+            include: { user: { select: { email: true } } },
+        });
+        if (members.length > 0) {
+            await prisma.notification.createMany({
+                data: members.map((m) => ({
+                    userId: m.userId,
+                    type: 'NEW_EVENT',
+                    title: `Announcement from ${announcement.team.name}`,
+                    body: `${announcement.author.name}: ${title}`,
+                    link: `/teams`,
+                })),
+            });
+
+            const emails = members.map((m) => m.user.email).filter(Boolean) as string[];
+            if (emails.length > 0) {
+                const html = announcementEmail({
+                    title,
+                    body,
+                    teamName: announcement.team.name,
+                    priority: priority || 'NORMAL',
+                });
+                await sendEmail({
+                    to: emails,
+                    subject: `[${announcement.team.name}] ${title}`,
+                    html,
+                });
+            }
+        }
 
         return NextResponse.json({
             success: true,

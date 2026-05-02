@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { toCSV } from '@/lib/utils';
+import { sendEmail, invoiceCreatedEmail } from '@/lib/email';
 
 export async function GET(req: NextRequest) {
     try {
@@ -109,10 +110,49 @@ export async function POST(req: NextRequest) {
                 playerId,
             },
             include: {
-                player: { select: { name: true } },
+                player: { select: { name: true, email: true } },
                 team: { select: { name: true } },
             },
         });
+
+        // Notify the player and linked parents
+        const notifyUserIds = [playerId];
+        const notifyEmails = [invoice.player.email].filter(Boolean) as string[];
+
+        const familyLinks = await prisma.familyLink.findMany({
+            where: { childId: playerId, status: 'ACTIVE' },
+            include: { parent: { select: { id: true, email: true } } },
+        });
+        for (const link of familyLinks) {
+            notifyUserIds.push(link.parentId);
+            if (link.parent.email) notifyEmails.push(link.parent.email);
+        }
+
+        if (notifyUserIds.length > 0) {
+            await prisma.notification.createMany({
+                data: notifyUserIds.map((uid) => ({
+                    userId: uid,
+                    type: 'INVOICE_DUE',
+                    title: `New invoice from ${invoice.team.name}`,
+                    body: `${title} — $${parseFloat(amount).toFixed(2)} due ${new Date(dueDate).toLocaleDateString()}`,
+                    link: `/payments`,
+                })),
+            });
+
+            if (notifyEmails.length > 0) {
+                const html = invoiceCreatedEmail({
+                    title,
+                    amount: parseFloat(amount),
+                    dueDate,
+                    teamName: invoice.team.name,
+                });
+                await sendEmail({
+                    to: notifyEmails,
+                    subject: `Invoice from ${invoice.team.name}: ${title}`,
+                    html,
+                });
+            }
+        }
 
         return NextResponse.json({
             success: true,
