@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import QRCode from 'qrcode';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import { useTheme } from '@/lib/useTheme';
 import { Bell, Mail, Moon, Camera, Loader2, LogOut, AlertTriangle, ShieldCheck } from 'lucide-react';
@@ -48,6 +49,7 @@ export default function SettingsPage() {
     const [twoFactorCode, setTwoFactorCode] = useState('');
     const [twoFactorSecret, setTwoFactorSecret] = useState('');
     const [twoFactorOtpAuthUrl, setTwoFactorOtpAuthUrl] = useState('');
+    const [twoFactorQrDataUrl, setTwoFactorQrDataUrl] = useState('');
     const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
     const [securityError, setSecurityError] = useState('');
     const [securityMessage, setSecurityMessage] = useState('');
@@ -66,6 +68,35 @@ export default function SettingsPage() {
             })
             .catch(() => undefined);
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function renderQrCode() {
+            if (!twoFactorOtpAuthUrl) {
+                setTwoFactorQrDataUrl('');
+                return;
+            }
+
+            try {
+                const dataUrl = await QRCode.toDataURL(twoFactorOtpAuthUrl, {
+                    errorCorrectionLevel: 'M',
+                    margin: 2,
+                    width: 220,
+                    color: {
+                        dark: '#0f172a',
+                        light: '#ffffff',
+                    },
+                });
+                if (!cancelled) setTwoFactorQrDataUrl(dataUrl);
+            } catch {
+                if (!cancelled) setTwoFactorQrDataUrl('');
+            }
+        }
+
+        renderQrCode();
+        return () => { cancelled = true; };
+    }, [twoFactorOtpAuthUrl]);
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -102,6 +133,7 @@ export default function SettingsPage() {
         setSecurityError('');
         setSecurityMessage('');
         setRecoveryCodes([]);
+        setTwoFactorQrDataUrl('');
         try {
             const res = await fetch('/api/auth/2fa/setup', {
                 method: 'POST',
@@ -144,6 +176,7 @@ export default function SettingsPage() {
             setTwoFactorCode('');
             setTwoFactorSecret('');
             setTwoFactorOtpAuthUrl('');
+            setTwoFactorQrDataUrl('');
             setSecurityPassword('');
             setSecurityMessage('Two-factor authentication is now enabled. Store your recovery codes somewhere safe.');
         } catch {
@@ -303,6 +336,38 @@ export default function SettingsPage() {
 
                     {!twoFactorEnabled && twoFactorSecret && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {twoFactorQrDataUrl && (
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '1rem',
+                                    flexWrap: 'wrap',
+                                    padding: '1rem',
+                                    borderRadius: 'var(--radius-lg)',
+                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    border: '1px solid rgba(148, 163, 184, 0.12)',
+                                }}>
+                                    <img
+                                        src={twoFactorQrDataUrl}
+                                        alt="Two-factor authentication QR code"
+                                        width={220}
+                                        height={220}
+                                        style={{
+                                            width: 220,
+                                            height: 220,
+                                            borderRadius: 'var(--radius-md)',
+                                            background: '#ffffff',
+                                            padding: 8,
+                                        }}
+                                    />
+                                    <div style={{ flex: '1 1 220px' }}>
+                                        <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>Scan QR Code</div>
+                                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                            Open your authenticator app, scan this code, then enter the 6-digit verification code below.
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             <div className="form-group" style={{ marginBottom: 0 }}>
                                 <label className="form-label">Authenticator Secret</label>
                                 <input className="form-input" value={twoFactorSecret} readOnly />
