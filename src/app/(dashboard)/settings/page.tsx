@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import { useTheme } from '@/lib/useTheme';
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/passwordPolicy';
 import { Bell, Mail, Moon, Camera, Loader2, LogOut, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
@@ -54,6 +55,11 @@ export default function SettingsPage() {
     const [securityError, setSecurityError] = useState('');
     const [securityMessage, setSecurityMessage] = useState('');
     const [securityLoading, setSecurityLoading] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [changePasswordLoading, setChangePasswordLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const darkMode = theme === 'dark';
 
@@ -126,6 +132,69 @@ export default function SettingsPage() {
     const handleLogout = async () => {
         await logout();
         router.push('/login');
+    };
+
+    const sendPasswordReset = async () => {
+        if (!user?.email) return;
+        setResetLoading(true);
+        setSecurityError('');
+        setSecurityMessage('');
+        try {
+            const res = await fetch('/api/auth/password-reset/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setSecurityError(data.error || 'Could not send password reset link.');
+                return;
+            }
+            setSecurityMessage(data.message || 'Password reset link sent.');
+        } catch {
+            setSecurityError('Connection error. Please try again.');
+        } finally {
+            setResetLoading(false);
+        }
+    };
+
+    const changePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setChangePasswordLoading(true);
+        setSecurityError('');
+        setSecurityMessage('');
+
+        if (!isStrongPassword(newPassword)) {
+            setSecurityError(PASSWORD_POLICY_MESSAGE);
+            setChangePasswordLoading(false);
+            return;
+        }
+        if (newPassword !== confirmNewPassword) {
+            setSecurityError('New passwords do not match.');
+            setChangePasswordLoading(false);
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/auth/password/change', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currentPassword, newPassword }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setSecurityError(data.error || 'Could not update password.');
+                return;
+            }
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmNewPassword('');
+            setSecurityMessage(data.message || 'Password updated successfully.');
+        } catch {
+            setSecurityError('Connection error. Please try again.');
+        } finally {
+            setChangePasswordLoading(false);
+        }
     };
 
     const startTwoFactorSetup = async () => {
@@ -298,6 +367,80 @@ export default function SettingsPage() {
                     <ShieldCheck size={18} />
                     Security
                 </h2>
+                <div className="glass-subtle" style={{
+                    padding: '1rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
+                }}>
+                    <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Password Reset</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                            Send a secure password reset link to {user.email}.
+                        </div>
+                    </div>
+                    <button className="btn btn-outline" onClick={sendPasswordReset} disabled={resetLoading}>
+                        {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                    </button>
+                </div>
+                <form className="glass-subtle" style={{ padding: '1rem', marginBottom: '1rem' }} onSubmit={changePassword}>
+                    <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Update Password</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                            Change your password immediately after confirming your current password.
+                        </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" htmlFor="current-password">Current Password</label>
+                            <input
+                                id="current-password"
+                                className="form-input"
+                                type="password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                autoComplete="current-password"
+                                required
+                            />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" htmlFor="new-password">New Password</label>
+                            <input
+                                id="new-password"
+                                className="form-input"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                autoComplete="new-password"
+                                minLength={10}
+                                required
+                            />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" htmlFor="confirm-new-password">Confirm New Password</label>
+                            <input
+                                id="confirm-new-password"
+                                className="form-input"
+                                type="password"
+                                value={confirmNewPassword}
+                                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                autoComplete="new-password"
+                                minLength={10}
+                                required
+                            />
+                        </div>
+                        <button
+                            className="btn btn-primary"
+                            type="submit"
+                            disabled={changePasswordLoading || !currentPassword || !newPassword || !confirmNewPassword}
+                        >
+                            {changePasswordLoading ? 'Updating...' : 'Update Password'}
+                        </button>
+                    </div>
+                </form>
                 <div className="glass-subtle" style={{ padding: '1rem', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <div>
