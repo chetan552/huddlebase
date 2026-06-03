@@ -180,3 +180,39 @@ export function eventCancelledEmail({
         </div>
     `;
 }
+
+export function passwordResetEmail({
+    name,
+    resetUrl,
+}: {
+    name: string;
+    resetUrl: string;
+}) {
+    return `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1e293b;">
+            <h2 style="margin: 0 0 8px; font-size: 20px;">Reset your HuddleBase password</h2>
+            <p style="margin: 0 0 16px; color: #64748b;">Hi ${name}, use the button below to choose a new password. This link expires in 1 hour.</p>
+            <a href="${resetUrl}" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600;">Reset Password</a>
+            <p style="margin: 16px 0 0; color: #94a3b8; font-size: 12px;">If you did not request this, you can ignore this email.</p>
+        </div>
+    `;
+}
+
+export function teamInviteEmail({
+    inviterName,
+    teamName,
+    inviteUrl,
+}: {
+    inviterName: string;
+    teamName: string;
+    inviteUrl: string;
+}) {
+    return `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1e293b;">
+            <h2 style="margin: 0 0 8px; font-size: 20px;">You're invited to ${teamName}</h2>
+            <p style="margin: 0 0 16px; color: #64748b;">${inviterName} invited you to join <strong>${teamName}</strong> on HuddleBase.</p>
+            <a href="${inviteUrl}" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600;">Accept Invite</a>
+            <p style="margin: 16px 0 0; color: #94a3b8; font-size: 12px;">This invite expires in 14 days.</p>
+        </div>
+    `;
+}

@@ -5,6 +5,8 @@ import { randomBytes } from 'crypto';
 import { getSessionUser } from '@/lib/session';
 import { toCSV } from '@/lib/utils';
 import { isTeamStaff } from '@/lib/permissions';
+import { sendEmail, teamInviteEmail } from '@/lib/email';
+import { appUrl, createSecureToken, hashToken } from '@/lib/tokens';
 
 export async function GET(req: NextRequest) {
     try {
@@ -121,6 +123,28 @@ export async function POST(req: NextRequest) {
                 user: { select: { name: true, email: true, phone: true } },
                 team: { select: { name: true } },
             },
+        });
+
+        const inviteToken = createSecureToken();
+        await prisma.teamInvite.create({
+            data: {
+                email,
+                teamId,
+                userId: playerUser.id,
+                role: role || 'PLAYER',
+                tokenHash: hashToken(inviteToken),
+                expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            },
+        });
+
+        await sendEmail({
+            to: email,
+            subject: `You're invited to ${member.team.name} on HuddleBase`,
+            html: teamInviteEmail({
+                inviterName: user.name,
+                teamName: member.team.name,
+                inviteUrl: appUrl(`/accept-invite?token=${inviteToken}`),
+            }),
         });
 
         return NextResponse.json({
