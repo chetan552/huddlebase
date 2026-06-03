@@ -30,7 +30,7 @@ interface FetchOptions extends Omit<RequestInit, 'headers'> {
 export async function api<T = any>(
     path: string,
     options: FetchOptions = {}
-): Promise<{ success: boolean; data?: T; error?: string; token?: string }> {
+): Promise<{ success: boolean; data?: T; error?: string; token?: string; requiresTwoFactor?: boolean }> {
     const token = await getToken();
 
     const headers: Record<string, string> = {

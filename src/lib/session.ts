@@ -9,6 +9,13 @@ export interface SessionUser {
     avatar?: string | null;
 }
 
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+interface SessionPayload extends SessionUser {
+    iat: number;
+    exp: number;
+}
+
 function base64UrlEncode(value: string): string {
     return Buffer.from(value, 'utf-8').toString('base64url');
 }
@@ -33,12 +40,15 @@ function signPayload(payload: string): string {
 }
 
 export function createSessionToken(user: SessionUser): string {
+    const now = Math.floor(Date.now() / 1000);
     const payload = base64UrlEncode(JSON.stringify({
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
         avatar: user.avatar ?? null,
+        iat: now,
+        exp: now + SESSION_TTL_SECONDS,
     }));
     return `${payload}.${signPayload(payload)}`;
 }
@@ -56,8 +66,9 @@ export function verifySessionToken(token: string): SessionUser | null {
     }
 
     try {
-        const parsed = JSON.parse(base64UrlDecode(payload)) as SessionUser;
+        const parsed = JSON.parse(base64UrlDecode(payload)) as SessionPayload;
         if (!parsed.id || !parsed.email || !parsed.name || !parsed.role) return null;
+        if (!parsed.exp || parsed.exp < Math.floor(Date.now() / 1000)) return null;
         return parsed;
     } catch {
         return null;

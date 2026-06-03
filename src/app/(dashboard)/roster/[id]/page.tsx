@@ -133,7 +133,7 @@ export default function PlayerProfilePage() {
                                                 Effort: {f.effortRating}/5
                                             </div>
                                         </div>
-                                        <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>"{f.note}"</p>
+                                        <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>&quot;{f.note}&quot;</p>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
                                             {new Date(f.createdAt).toLocaleDateString()}
                                         </div>

@@ -12,6 +12,8 @@ export default function LoginScreen() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [twoFactorCode, setTwoFactorCode] = useState('');
+    const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -22,8 +24,9 @@ export default function LoginScreen() {
         }
         setLoading(true);
         setError('');
-        const result = await login(email, password);
+        const result = await login(email, password, requiresTwoFactor ? twoFactorCode : undefined);
         if (!result.success) {
+            if (result.requiresTwoFactor) setRequiresTwoFactor(true);
             setError(result.error || 'Login failed');
         }
         setLoading(false);
@@ -74,6 +77,20 @@ export default function LoginScreen() {
                         secureTextEntry
                     />
 
+                    {requiresTwoFactor ? (
+                        <>
+                            <Text style={styles.label}>Two-Factor Code</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="123456 or recovery code"
+                                placeholderTextColor={Colors.textTertiary}
+                                value={twoFactorCode}
+                                onChangeText={setTwoFactorCode}
+                                autoCapitalize="none"
+                            />
+                        </>
+                    ) : null}
+
                     <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
                         {loading ? (
                             <ActivityIndicator color="#fff" />
@@ -82,9 +99,11 @@ export default function LoginScreen() {
                         )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.demoButton} onPress={handleDemo} disabled={loading}>
-                        <Text style={styles.demoButtonText}>🎯 Try Demo Account</Text>
-                    </TouchableOpacity>
+                    {__DEV__ ? (
+                        <TouchableOpacity style={styles.demoButton} onPress={handleDemo} disabled={loading}>
+                            <Text style={styles.demoButtonText}>🎯 Try Demo Account</Text>
+                        </TouchableOpacity>
+                    ) : null}
                 </View>
 
                 <View style={styles.footer}>

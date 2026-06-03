@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/passwordPolicy';
 
 function AcceptInviteForm() {
     const searchParams = useSearchParams();
@@ -18,8 +19,8 @@ function AcceptInviteForm() {
         e.preventDefault();
         setError('');
 
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters');
+        if (!isStrongPassword(password)) {
+            setError(PASSWORD_POLICY_MESSAGE);
             return;
         }
         if (password !== confirmPassword) {

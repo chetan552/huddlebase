@@ -6,7 +6,7 @@ import type { SessionUser } from '@/types';
 interface AuthContextType {
     user: SessionUser | null;
     loading: boolean;
-    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    login: (email: string, password: string, twoFactorCode?: string) => Promise<{ success: boolean; error?: string; requiresTwoFactor?: boolean }>;
     register: (name: string, email: string, password: string, role: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
@@ -38,19 +38,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshUser();
     }, [refreshUser]);
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, twoFactorCode?: string) => {
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, twoFactorCode }),
             });
             const data = await res.json();
             if (data.success) {
                 setUser(data.data);
                 return { success: true };
             }
-            return { success: false, error: data.error };
+            return { success: false, error: data.error, requiresTwoFactor: data.requiresTwoFactor };
         } catch {
             return { success: false, error: 'Network error' };
         }

@@ -9,6 +9,8 @@ export default function LoginPage() {
   const showDemoLogin = process.env.NODE_ENV !== 'production';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -19,9 +21,12 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    const result = await login(email, password);
+    const result = await login(email, password, requiresTwoFactor ? twoFactorCode : undefined);
     if (result.success) {
       router.push('/dashboard');
+    } else if (result.requiresTwoFactor) {
+      setRequiresTwoFactor(true);
+      setError(result.error || 'Enter your two-factor code');
     } else {
       setError(result.error || 'Login failed');
     }
@@ -85,6 +90,22 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
+
+            {requiresTwoFactor && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="twoFactorCode">Two-Factor Code</label>
+                <input
+                  id="twoFactorCode"
+                  className="form-input"
+                  placeholder="123456 or recovery code"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value)}
+                  autoComplete="one-time-code"
+                  autoFocus
+                  required
+                />
+              </div>
+            )}
 
             <button
               type="submit"

@@ -13,7 +13,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 npm run dev              # Start Next.js dev server (port 3000)
 npm run build            # Production build
 npm run start            # Production server
-npm run eslint           # ESLint
+npm run lint             # ESLint
 
 # Database (Prisma)
 npx prisma generate      # Regenerate Prisma client after schema changes

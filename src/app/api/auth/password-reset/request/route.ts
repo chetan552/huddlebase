@@ -16,14 +16,34 @@ export async function POST(req: NextRequest) {
         });
 
         if (user) {
-            const token = createSecureToken();
-            await prisma.passwordResetToken.create({
-                data: {
+            const recentRequests = await prisma.passwordResetToken.count({
+                where: {
                     userId: user.id,
-                    tokenHash: hashToken(token),
-                    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+                    createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) },
                 },
             });
+
+            if (recentRequests >= 3) {
+                return NextResponse.json({
+                    success: true,
+                    message: 'If an account exists for that email, a reset link has been sent.',
+                });
+            }
+
+            const token = createSecureToken();
+            await prisma.$transaction([
+                prisma.passwordResetToken.updateMany({
+                    where: { userId: user.id, usedAt: null },
+                    data: { usedAt: new Date() },
+                }),
+                prisma.passwordResetToken.create({
+                    data: {
+                        userId: user.id,
+                        tokenHash: hashToken(token),
+                        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+                    },
+                }),
+            ]);
 
             await sendEmail({
                 to: user.email,

@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/passwordPolicy';
 
 function ResetPasswordForm() {
     const searchParams = useSearchParams();
@@ -16,8 +17,8 @@ function ResetPasswordForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters');
+        if (!isStrongPassword(password)) {
+            setError(PASSWORD_POLICY_MESSAGE);
             return;
         }
         if (password !== confirmPassword) {
@@ -73,7 +74,7 @@ function ResetPasswordForm() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    minLength={8}
+                                    minLength={10}
                                     autoComplete="new-password"
                                 />
                             </div>
@@ -86,7 +87,7 @@ function ResetPasswordForm() {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
-                                    minLength={8}
+                                    minLength={10}
                                     autoComplete="new-password"
                                 />
                             </div>

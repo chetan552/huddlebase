@@ -461,6 +461,15 @@ button {
   color: var(--danger-400);
 }
 
+.form-success {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  background: rgba(34, 197, 94, 0.10);
+  color: var(--success-400);
+  font-size: var(--font-size-sm);
+}
+
 /* ============================================
    Card Styles
    ============================================ */

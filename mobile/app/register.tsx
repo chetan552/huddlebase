@@ -13,6 +13,12 @@ const ROLES = [
     { value: 'PARENT', label: 'Parent', icon: '👨‍👩‍👧', desc: 'Stay connected' },
 ];
 
+const PASSWORD_POLICY_MESSAGE = 'Password must be at least 10 characters and include letters and numbers';
+
+function isStrongPassword(password: string) {
+    return password.length >= 10 && /[A-Za-z]/.test(password) && /\d/.test(password);
+}
+
 export default function RegisterScreen() {
     const { register } = useAuth();
     const router = useRouter();
@@ -28,8 +34,8 @@ export default function RegisterScreen() {
             setError('Please fill in all fields');
             return;
         }
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters');
+        if (!isStrongPassword(password)) {
+            setError(PASSWORD_POLICY_MESSAGE);
             return;
         }
         setLoading(true);

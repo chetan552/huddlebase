@@ -164,7 +164,7 @@ export default function PlayerDashboard({ user }: { user: any }) {
                                             <div style={{ fontWeight: 'bold' }}>{feedback[0].coach.name}</div>
                                             <div style={{ color: 'var(--primary-400)', fontWeight: 'bold' }}>Effort: {feedback[0].effortRating}/5</div>
                                         </div>
-                                        <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>"{feedback[0].note}"</p>
+                                        <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>&quot;{feedback[0].note}&quot;</p>
                                     </div>
                                 ) : (
                                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No feedback yet.</p>

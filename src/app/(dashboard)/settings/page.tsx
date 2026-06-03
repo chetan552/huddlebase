@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import { useTheme } from '@/lib/useTheme';
-import { Bell, Mail, Moon, Camera, Loader2, LogOut, AlertTriangle } from 'lucide-react';
+import { Bell, Mail, Moon, Camera, Loader2, LogOut, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
     return (
@@ -42,8 +42,30 @@ export default function SettingsPage() {
     const [notifications, setNotifications] = useState(true);
     const [emailUpdates, setEmailUpdates] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+    const [recoveryCodesRemaining, setRecoveryCodesRemaining] = useState(0);
+    const [securityPassword, setSecurityPassword] = useState('');
+    const [twoFactorCode, setTwoFactorCode] = useState('');
+    const [twoFactorSecret, setTwoFactorSecret] = useState('');
+    const [twoFactorOtpAuthUrl, setTwoFactorOtpAuthUrl] = useState('');
+    const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+    const [securityError, setSecurityError] = useState('');
+    const [securityMessage, setSecurityMessage] = useState('');
+    const [securityLoading, setSecurityLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const darkMode = theme === 'dark';
+
+    useEffect(() => {
+        fetch('/api/auth/2fa/status')
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success) {
+                    setTwoFactorEnabled(data.data.enabled);
+                    setRecoveryCodesRemaining(data.data.recoveryCodesRemaining);
+                }
+            })
+            .catch(() => undefined);
+    }, []);
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -73,6 +95,90 @@ export default function SettingsPage() {
     const handleLogout = async () => {
         await logout();
         router.push('/login');
+    };
+
+    const startTwoFactorSetup = async () => {
+        setSecurityLoading(true);
+        setSecurityError('');
+        setSecurityMessage('');
+        setRecoveryCodes([]);
+        try {
+            const res = await fetch('/api/auth/2fa/setup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: securityPassword }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setSecurityError(data.error || 'Could not start two-factor setup.');
+                return;
+            }
+            setTwoFactorSecret(data.data.secret);
+            setTwoFactorOtpAuthUrl(data.data.otpauthUrl);
+            setSecurityMessage('Add this secret to your authenticator app, then enter the 6-digit code.');
+        } catch {
+            setSecurityError('Connection error. Please try again.');
+        } finally {
+            setSecurityLoading(false);
+        }
+    };
+
+    const verifyTwoFactorSetup = async () => {
+        setSecurityLoading(true);
+        setSecurityError('');
+        setSecurityMessage('');
+        try {
+            const res = await fetch('/api/auth/2fa/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: twoFactorCode }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setSecurityError(data.error || 'Could not enable two-factor authentication.');
+                return;
+            }
+            setTwoFactorEnabled(true);
+            setRecoveryCodes(data.data.recoveryCodes);
+            setRecoveryCodesRemaining(data.data.recoveryCodes.length);
+            setTwoFactorCode('');
+            setTwoFactorSecret('');
+            setTwoFactorOtpAuthUrl('');
+            setSecurityPassword('');
+            setSecurityMessage('Two-factor authentication is now enabled. Store your recovery codes somewhere safe.');
+        } catch {
+            setSecurityError('Connection error. Please try again.');
+        } finally {
+            setSecurityLoading(false);
+        }
+    };
+
+    const disableTwoFactor = async () => {
+        setSecurityLoading(true);
+        setSecurityError('');
+        setSecurityMessage('');
+        try {
+            const res = await fetch('/api/auth/2fa/disable', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: securityPassword, code: twoFactorCode }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setSecurityError(data.error || 'Could not disable two-factor authentication.');
+                return;
+            }
+            setTwoFactorEnabled(false);
+            setRecoveryCodesRemaining(0);
+            setRecoveryCodes([]);
+            setTwoFactorCode('');
+            setSecurityPassword('');
+            setSecurityMessage('Two-factor authentication has been disabled.');
+        } catch {
+            setSecurityError('Connection error. Please try again.');
+        } finally {
+            setSecurityLoading(false);
+        }
     };
 
     if (!user) return null;
@@ -150,6 +256,117 @@ export default function SettingsPage() {
                         <label className="form-label">Role</label>
                         <input className="form-input" value={user.role} readOnly />
                     </div>
+                </div>
+            </div>
+
+            {/* Security */}
+            <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <h2 className="card-title" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldCheck size={18} />
+                    Security
+                </h2>
+                <div className="glass-subtle" style={{ padding: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                        <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Two-Factor Authentication</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                                {twoFactorEnabled
+                                    ? `Enabled. ${recoveryCodesRemaining} recovery code${recoveryCodesRemaining === 1 ? '' : 's'} remaining.`
+                                    : 'Protect your account with an authenticator app.'}
+                            </div>
+                        </div>
+                        <span className={`badge ${twoFactorEnabled ? 'badge-success' : 'badge-neutral'}`}>
+                            {twoFactorEnabled ? 'Enabled' : 'Off'}
+                        </span>
+                    </div>
+
+                    {securityError && <div className="auth-error" style={{ marginBottom: '1rem' }}><span>!</span>{securityError}</div>}
+                    {securityMessage && <div className="form-success" style={{ marginBottom: '1rem' }}>{securityMessage}</div>}
+
+                    {!twoFactorEnabled && !twoFactorSecret && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end' }}>
+                            <div className="form-group" style={{ flex: '1 1 260px', marginBottom: 0 }}>
+                                <label className="form-label">Confirm Password</label>
+                                <input
+                                    className="form-input"
+                                    type="password"
+                                    value={securityPassword}
+                                    onChange={(e) => setSecurityPassword(e.target.value)}
+                                    autoComplete="current-password"
+                                />
+                            </div>
+                            <button className="btn btn-primary" onClick={startTwoFactorSetup} disabled={securityLoading || !securityPassword}>
+                                {securityLoading ? 'Starting...' : 'Set Up 2FA'}
+                            </button>
+                        </div>
+                    )}
+
+                    {!twoFactorEnabled && twoFactorSecret && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">Authenticator Secret</label>
+                                <input className="form-input" value={twoFactorSecret} readOnly />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">Authenticator URI</label>
+                                <input className="form-input" value={twoFactorOtpAuthUrl} readOnly />
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end' }}>
+                                <div className="form-group" style={{ flex: '1 1 220px', marginBottom: 0 }}>
+                                    <label className="form-label">Verification Code</label>
+                                    <input
+                                        className="form-input"
+                                        value={twoFactorCode}
+                                        onChange={(e) => setTwoFactorCode(e.target.value)}
+                                        placeholder="123456"
+                                        autoComplete="one-time-code"
+                                    />
+                                </div>
+                                <button className="btn btn-primary" onClick={verifyTwoFactorSetup} disabled={securityLoading || !twoFactorCode}>
+                                    {securityLoading ? 'Verifying...' : 'Enable 2FA'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {twoFactorEnabled && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end' }}>
+                            <div className="form-group" style={{ flex: '1 1 220px', marginBottom: 0 }}>
+                                <label className="form-label">Password</label>
+                                <input
+                                    className="form-input"
+                                    type="password"
+                                    value={securityPassword}
+                                    onChange={(e) => setSecurityPassword(e.target.value)}
+                                    autoComplete="current-password"
+                                />
+                            </div>
+                            <div className="form-group" style={{ flex: '1 1 220px', marginBottom: 0 }}>
+                                <label className="form-label">Authenticator Code</label>
+                                <input
+                                    className="form-input"
+                                    value={twoFactorCode}
+                                    onChange={(e) => setTwoFactorCode(e.target.value)}
+                                    placeholder="123456"
+                                    autoComplete="one-time-code"
+                                />
+                            </div>
+                            <button className="btn btn-danger" onClick={disableTwoFactor} disabled={securityLoading || !securityPassword || !twoFactorCode}>
+                                {securityLoading ? 'Disabling...' : 'Disable 2FA'}
+                            </button>
+                        </div>
+                    )}
+
+                    {recoveryCodes.length > 0 && (
+                        <div className="glass-subtle" style={{ marginTop: '1rem', padding: '1rem' }}>
+                            <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>Recovery Codes</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
+                                {recoveryCodes.map((code) => (
+                                    <code key={code} style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{code}</code>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

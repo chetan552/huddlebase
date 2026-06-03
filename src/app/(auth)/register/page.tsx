@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/passwordPolicy';
 
 const ROLES = [
     { value: 'COACH', label: 'Coach', icon: '📋', desc: 'Manage roster, schedule, and games' },
@@ -29,8 +30,8 @@ export default function RegisterPage() {
                 setError('All fields are required');
                 return;
             }
-            if (password.length < 8) {
-                setError('Password must be at least 8 characters');
+            if (!isStrongPassword(password)) {
+                setError(PASSWORD_POLICY_MESSAGE);
                 return;
             }
             setError('');
@@ -126,11 +127,11 @@ export default function RegisterPage() {
                                         id="reg-password"
                                         type="password"
                                         className="form-input"
-                                        placeholder="Min. 6 characters"
+                                        placeholder="Min. 10 characters with letters and numbers"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                        minLength={6}
+                                        minLength={10}
                                         autoComplete="new-password"
                                     />
                                     {password && (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/passwordPolicy';
 
 const PUBLIC_ROLES = new Set(['COACH', 'PARENT', 'PLAYER']);
 
@@ -14,9 +15,9 @@ export async function POST(req: NextRequest) {
                 { status: 400 }
             );
         }
-        if (password.length < 8) {
+        if (!isStrongPassword(password)) {
             return NextResponse.json(
-                { success: false, error: 'Password must be at least 8 characters' },
+                { success: false, error: PASSWORD_POLICY_MESSAGE },
                 { status: 400 }
             );
         }

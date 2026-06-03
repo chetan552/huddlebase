@@ -12,7 +12,7 @@ export interface User {
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    login: (email: string, password: string, twoFactorCode?: string) => Promise<{ success: boolean; error?: string; requiresTwoFactor?: boolean }>;
     register: (name: string, email: string, password: string, role: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
@@ -49,18 +49,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         checkSession();
     }, [checkSession]);
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, twoFactorCode?: string) => {
         try {
             const res = await api<User>('/api/auth/login', {
                 method: 'POST',
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, twoFactorCode }),
             });
             if (res.success && res.data && res.token) {
                 await setToken(res.token);
                 setUser(res.data);
                 return { success: true };
             }
-            return { success: false, error: res.error || 'Login failed' };
+            return { success: false, error: res.error || 'Login failed', requiresTwoFactor: res.requiresTwoFactor };
         } catch {
             return { success: false, error: 'Network error' };
         }
