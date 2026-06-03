@@ -135,6 +135,7 @@ export default function SchedulePage() {
     const [loadingVolunteers, setLoadingVolunteers] = useState(false);
     const [volunteersSaving, setVolunteersSaving] = useState(false);
     const [volunteerError, setVolunteerError] = useState<string | null>(null);
+    const [volunteerSuccess, setVolunteerSuccess] = useState<string | null>(null);
     const [volunteerMigrationRequired, setVolunteerMigrationRequired] = useState(false);
     const searchParams = useSearchParams();
     const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
@@ -252,6 +253,7 @@ export default function SchedulePage() {
         e.stopPropagation();
         setSelectedEventRsvps(ev);
         setEventModalTab('rsvps');
+        setVolunteerSuccess(null);
         fetchRsvps(ev.id);
         fetchVolunteers(ev.id);
         if (isStaff) fetchAttendance(ev.id);
@@ -327,6 +329,7 @@ export default function SchedulePage() {
         }
         setVolunteersSaving(true);
         setVolunteerError(null);
+        setVolunteerSuccess(null);
         try {
             const res = await fetch(`/api/events/${selectedEventRsvps.id}/volunteers`, {
                 method: 'POST',
@@ -338,7 +341,8 @@ export default function SchedulePage() {
                 setVolunteerError(data.error || 'Could not save volunteer needs.');
                 return;
             }
-            fetchVolunteers(selectedEventRsvps.id);
+            await fetchVolunteers(selectedEventRsvps.id);
+            setVolunteerSuccess('Snack and drink signups saved.');
         } catch (err) {
             console.error('Failed to save volunteer needs:', err);
             setVolunteerError('Could not save volunteer needs.');
@@ -353,6 +357,7 @@ export default function SchedulePage() {
             const evt = events.find(e => e.id === eventId);
             if (evt) {
                 setSelectedEventRsvps(evt);
+                setVolunteerSuccess(null);
                 fetchRsvps(evt.id);
                 fetchVolunteers(evt.id);
                 if (isStaff) fetchAttendance(evt.id);
@@ -1010,13 +1015,18 @@ export default function SchedulePage() {
                                             onClick={saveVolunteerNeeds}
                                             disabled={volunteersSaving || volunteerMigrationRequired}
                                         >
-                                            {volunteersSaving ? 'Saving...' : 'Save'}
+                                            {volunteersSaving ? 'Saving...' : 'Save Signups'}
                                         </button>
                                     </div>
 
                                     {volunteerError && (
                                         <div style={{ marginBottom: '0.75rem', color: 'var(--danger-400)', fontSize: '0.8rem' }}>
                                             {volunteerError}
+                                        </div>
+                                    )}
+                                    {volunteerSuccess && (
+                                        <div style={{ marginBottom: '0.75rem', color: 'var(--success-400)', fontSize: '0.8rem' }}>
+                                            {volunteerSuccess}
                                         </div>
                                     )}
                                     {volunteerMigrationRequired && (
