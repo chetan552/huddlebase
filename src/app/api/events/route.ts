@@ -3,6 +3,12 @@ import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { sendEmail, eventCreatedEmail } from '@/lib/email';
 
+function parseOptionalScore(value: unknown): number | null {
+    if (value === undefined || value === null || value === '') return null;
+    const parsed = Number(value);
+    return Number.isInteger(parsed) ? parsed : Number.NaN;
+}
+
 export async function GET(req: NextRequest) {
     try {
         const user = getSessionUser(req);
@@ -60,6 +66,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Title, team, and start time are required' }, { status: 400 });
         }
 
+        const parsedHomeScore = parseOptionalScore(homeScore);
+        const parsedAwayScore = parseOptionalScore(awayScore);
+
+        if (Number.isNaN(parsedHomeScore) || Number.isNaN(parsedAwayScore)) {
+            return NextResponse.json({ success: false, error: 'Scores must be whole numbers' }, { status: 400 });
+        }
+
         const event = await prisma.event.create({
             data: {
                 title,
@@ -70,8 +83,8 @@ export async function POST(req: NextRequest) {
                 endTime: endTime ? new Date(endTime) : null,
                 notes: notes || null,
                 opponentName: opponentName || null,
-                homeScore: homeScore !== undefined ? homeScore : null,
-                awayScore: awayScore !== undefined ? awayScore : null,
+                homeScore: parsedHomeScore,
+                awayScore: parsedAwayScore,
                 result: result || null,
             },
             include: { team: { select: { name: true, color: true } } },

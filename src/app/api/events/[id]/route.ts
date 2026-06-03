@@ -3,6 +3,12 @@ import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { sendEmail, eventCancelledEmail } from '@/lib/email';
 
+function parseOptionalScore(value: unknown): number | null {
+    if (value === undefined || value === null || value === '') return null;
+    const parsed = Number(value);
+    return Number.isInteger(parsed) ? parsed : Number.NaN;
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const user = getSessionUser(req);
@@ -35,13 +41,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
         }
 
+        const parsedHomeScore = parseOptionalScore(homeScore);
+        const parsedAwayScore = parseOptionalScore(awayScore);
+
+        if (Number.isNaN(parsedHomeScore) || Number.isNaN(parsedAwayScore)) {
+            return NextResponse.json({ success: false, error: 'Scores must be whole numbers' }, { status: 400 });
+        }
+
         const updated = await prisma.event.update({
             where: { id },
             data: {
                 ...(isCancelled !== undefined && { isCancelled }),
                 ...(opponentName !== undefined && { opponentName: opponentName || null }),
-                ...(homeScore !== undefined && { homeScore: homeScore === null ? null : Number(homeScore) }),
-                ...(awayScore !== undefined && { awayScore: awayScore === null ? null : Number(awayScore) }),
+                ...(homeScore !== undefined && { homeScore: parsedHomeScore }),
+                ...(awayScore !== undefined && { awayScore: parsedAwayScore }),
                 ...(result !== undefined && { result: result || null }),
             },
         });

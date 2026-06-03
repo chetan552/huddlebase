@@ -278,7 +278,7 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
                             <p className="empty-state__description">No announcements yet.</p>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: 480, overflowY: 'auto', paddingRight: '0.25rem' }}>
                             {announcements.slice(0, 5).map((a) => (
                                 <div
                                     key={a.id}
@@ -292,7 +292,19 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
                                         <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{a.title}</div>
                                         {a.priority === 'URGENT' && <AlertTriangle size={14} color="var(--danger-500)" style={{ flexShrink: 0, marginTop: 2 }} />}
                                     </div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{a.body}</div>
+                                    <div
+                                        style={{
+                                            fontSize: '0.8rem',
+                                            color: 'var(--text-secondary)',
+                                            marginTop: '0.25rem',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        {a.body}
+                                    </div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '0.375rem' }}>
                                         {a.teamName} · {a.authorName} · {new Date(a.createdAt).toLocaleDateString()}
                                     </div>

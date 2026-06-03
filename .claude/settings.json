@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(grep -v \"^$\")",
+      "Read(//private/tmp/**)",
+      "Bash(grep -E \"\\(useTheme|^/Users.*\\\\.tsx?$\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(curl -s -o /dev/null -w \"Login: %{http_code}\\\\n\" http://localhost:3000/login)",
+      "Bash(curl -s -o /dev/null -w \"Dashboard: %{http_code}\\\\n\" http://localhost:3000/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"Teams: %{http_code}\\\\n\" http://localhost:3000/teams)",
+      "Bash(curl -s -o /dev/null -w \"Schedule: %{http_code}\\\\n\" http://localhost:3000/schedule)",
+      "Bash(curl -s -o /dev/null -w \"Roster: %{http_code}\\\\n\" http://localhost:3000/roster)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(git mv *)",
+      "Bash(awk 'NR<309 || NR>682' /Users/chetanchadalavada/Development/github/TeamManagementApp/src/app/\\\\\\(dashboard\\\\\\)/layout.tsx)",
+      "Read(//tmp/**)",
+      "Bash(git diff *)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(node -e ' *)"
+    ],
+    "additionalDirectories": [
+      "/Users/chetanchadalavada/Development/github/TeamManagementApp/src",
+      "/private/tmp"
+    ]
+  }
+}

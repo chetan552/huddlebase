@@ -29,6 +29,7 @@ model User {
   announcements  Announcement[]
   rsvps          RSVP[]
   attendances    Attendance[]
+  volunteerSignups EventVolunteerSignup[]
   invoices       Invoice[]       @relation("InvoicedPlayer")
   payments       Payment[]
   notifications  Notification[]
@@ -133,6 +134,35 @@ model Event {
   rsvps       RSVP[]
   attendances Attendance[]
   playerStats PlayerStat[]
+  volunteerNeeds EventVolunteerNeed[]
+}
+
+model EventVolunteerNeed {
+  id          String   @id @default(uuid())
+  eventId     String
+  type        String   @default("SNACKS") // SNACKS, DRINKS, OTHER
+  title       String
+  description String?
+  slotsNeeded Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event   Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  signups EventVolunteerSignup[]
+}
+
+model EventVolunteerSignup {
+  id        String   @id @default(uuid())
+  needId    String
+  userId    String
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  need EventVolunteerNeed @relation(fields: [needId], references: [id], onDelete: Cascade)
+  user User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([needId, userId])
 }
 
 // ============================================

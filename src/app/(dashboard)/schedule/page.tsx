@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Cookie, CupSoda, Package, Plus, Trash2, X } from 'lucide-react';
 
 interface Event {
     id: string;
@@ -55,12 +55,60 @@ interface RSVP {
     updatedAt: string;
 }
 
+interface VolunteerSignup {
+    id: string;
+    userId: string;
+    userName: string;
+    userAvatar: string | null;
+    note: string | null;
+    createdAt: string;
+}
+
+interface VolunteerNeed {
+    id: string;
+    type: 'SNACKS' | 'DRINKS' | 'OTHER';
+    title: string;
+    description: string | null;
+    slotsNeeded: number;
+    signups: VolunteerSignup[];
+}
+
+interface VolunteerNeedDraft {
+    id?: string;
+    type: 'SNACKS' | 'DRINKS' | 'OTHER';
+    title: string;
+    description: string;
+    slotsNeeded: number;
+}
+
+interface FamilyChild {
+    id: string;
+    name: string;
+}
+
+interface RsvpRequestBody {
+    status: string;
+    userId?: string;
+}
+
+const emptyVolunteerNeed = (): VolunteerNeedDraft => ({
+    type: 'SNACKS',
+    title: '',
+    description: '',
+    slotsNeeded: 1,
+});
+
+const volunteerTypeMeta = {
+    SNACKS: { label: 'Snacks', icon: Cookie, color: 'var(--warning-400)' },
+    DRINKS: { label: 'Drinks', icon: CupSoda, color: 'var(--primary-400)' },
+    OTHER: { label: 'Other', icon: Package, color: 'var(--accent-400)' },
+};
+
 export default function SchedulePage() {
     const { user } = useAuth();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [events, setEvents] = useState<Event[]>([]);
     const [showModal, setShowModal] = useState(false);
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
     const [formData, setFormData] = useState({
         title: '', type: 'PRACTICE', teamId: '', location: '',
@@ -81,7 +129,13 @@ export default function SchedulePage() {
         lateReason: string | null;
     }>>([]);
     const [attendanceSaving, setAttendanceSaving] = useState(false);
-    const [eventModalTab, setEventModalTab] = useState<'rsvps' | 'attendance'>('rsvps');
+    const [eventModalTab, setEventModalTab] = useState<'rsvps' | 'attendance' | 'volunteers'>('rsvps');
+    const [volunteerNeeds, setVolunteerNeeds] = useState<VolunteerNeed[]>([]);
+    const [volunteerDrafts, setVolunteerDrafts] = useState<VolunteerNeedDraft[]>([]);
+    const [loadingVolunteers, setLoadingVolunteers] = useState(false);
+    const [volunteersSaving, setVolunteersSaving] = useState(false);
+    const [volunteerError, setVolunteerError] = useState<string | null>(null);
+    const [volunteerMigrationRequired, setVolunteerMigrationRequired] = useState(false);
     const searchParams = useSearchParams();
     const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
     const isParent = user?.role === 'PARENT';
@@ -112,12 +166,12 @@ export default function SchedulePage() {
         if (isParent) {
             fetch('/api/family').then(r => r.json()).then(data => {
                 if (data.success && data.data.length > 0) {
-                    setChildren(data.data.map((c: any) => ({ id: c.id, name: c.name })));
+                    setChildren(data.data.map((c: FamilyChild) => ({ id: c.id, name: c.name })));
                     setSelectedChildId(data.data[0].id);
                 }
             }).catch(console.error);
         }
-    }, []);
+    }, [isParent]);
 
     useEffect(() => {
         // Auto-scroll to today's date
@@ -149,6 +203,31 @@ export default function SchedulePage() {
         } catch (err) { console.error('Failed to fetch attendance:', err); }
     };
 
+    const fetchVolunteers = async (eventId: string) => {
+        setLoadingVolunteers(true);
+        setVolunteerError(null);
+        setVolunteerMigrationRequired(false);
+        try {
+            const res = await fetch(`/api/events/${eventId}/volunteers`);
+            const data = await res.json();
+            if (data.success) {
+                setVolunteerMigrationRequired(Boolean(data.migrationRequired));
+                setVolunteerNeeds(data.data);
+                setVolunteerDrafts(data.data.map((need: VolunteerNeed) => ({
+                    id: need.id,
+                    type: need.type,
+                    title: need.title,
+                    description: need.description || '',
+                    slotsNeeded: need.slotsNeeded,
+                })));
+            }
+        } catch (err) {
+            console.error('Failed to fetch volunteers:', err);
+            setVolunteerError('Could not load snack and drink signups.');
+        }
+        setLoadingVolunteers(false);
+    };
+
     const saveAttendance = async () => {
         if (!selectedEventRsvps) return;
         setAttendanceSaving(true);
@@ -174,6 +253,7 @@ export default function SchedulePage() {
         setSelectedEventRsvps(ev);
         setEventModalTab('rsvps');
         fetchRsvps(ev.id);
+        fetchVolunteers(ev.id);
         if (isStaff) fetchAttendance(ev.id);
     };
 
@@ -196,7 +276,7 @@ export default function SchedulePage() {
 
     const handleRsvp = async (status: string) => {
         if (!selectedEventRsvps) return;
-        const body: any = { status };
+        const body: RsvpRequestBody = { status };
         if (isParent && selectedChildId) {
             body.userId = selectedChildId;
         }
@@ -214,6 +294,59 @@ export default function SchedulePage() {
         }
     };
 
+    const handleVolunteerSignup = async (need: VolunteerNeed, signedUp: boolean) => {
+        if (!selectedEventRsvps) return;
+        if (volunteerMigrationRequired) {
+            setVolunteerError('Snack and drink signups need a database migration before they can be saved.');
+            return;
+        }
+        setVolunteerError(null);
+        try {
+            const res = await fetch(`/api/events/${selectedEventRsvps.id}/volunteers/${need.id}/signup`, {
+                method: signedUp ? 'DELETE' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: signedUp ? undefined : JSON.stringify({}),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setVolunteerError(data.error || 'Could not update signup.');
+                return;
+            }
+            fetchVolunteers(selectedEventRsvps.id);
+        } catch (err) {
+            console.error('Failed to update volunteer signup:', err);
+            setVolunteerError('Could not update signup.');
+        }
+    };
+
+    const saveVolunteerNeeds = async () => {
+        if (!selectedEventRsvps) return;
+        if (volunteerMigrationRequired) {
+            setVolunteerError('Snack and drink signups need a database migration before they can be saved.');
+            return;
+        }
+        setVolunteersSaving(true);
+        setVolunteerError(null);
+        try {
+            const res = await fetch(`/api/events/${selectedEventRsvps.id}/volunteers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ needs: volunteerDrafts }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setVolunteerError(data.error || 'Could not save volunteer needs.');
+                return;
+            }
+            fetchVolunteers(selectedEventRsvps.id);
+        } catch (err) {
+            console.error('Failed to save volunteer needs:', err);
+            setVolunteerError('Could not save volunteer needs.');
+        } finally {
+            setVolunteersSaving(false);
+        }
+    };
+
     useEffect(() => {
         const eventId = searchParams?.get('eventId');
         if (eventId && events.length > 0) {
@@ -221,6 +354,7 @@ export default function SchedulePage() {
             if (evt) {
                 setSelectedEventRsvps(evt);
                 fetchRsvps(evt.id);
+                fetchVolunteers(evt.id);
                 if (isStaff) fetchAttendance(evt.id);
             }
         }
@@ -324,7 +458,6 @@ export default function SchedulePage() {
                                 onClick={() => {
                                     if (!isStaff) return;
                                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                    setSelectedDate(dateStr);
                                     setFormData((prev) => ({ ...prev, startTime: `${dateStr}T16:00` }));
                                     setShowModal(true);
                                 }}
@@ -498,7 +631,7 @@ export default function SchedulePage() {
             {/* RSVP Detail Modal */}
             {selectedEventRsvps && (
                 <div className="modal-overlay" onClick={() => setSelectedEventRsvps(null)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '560px' }}>
                         <div className="modal-header" style={{ alignItems: 'flex-start' }}>
                             <div>
                                 <h2 className="modal-title" style={{ textDecoration: selectedEventRsvps.isCancelled ? 'line-through' : 'none', opacity: selectedEventRsvps.isCancelled ? 0.7 : 1 }}>
@@ -675,10 +808,77 @@ export default function SchedulePage() {
                                 </div>
                             )}
 
+                            {/* Parent snack and drink signup controls */}
+                            {!isStaff && !selectedEventRsvps.isCancelled && (
+                                <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--surface-600)' }}>
+                                    <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>Snacks & Drinks</h3>
+                                    {volunteerError && (
+                                        <div style={{ marginBottom: '0.75rem', color: 'var(--danger-400)', fontSize: '0.8rem' }}>
+                                            {volunteerError}
+                                        </div>
+                                    )}
+                                    {volunteerMigrationRequired && (
+                                        <div style={{ marginBottom: '0.75rem', color: 'var(--warning-400)', fontSize: '0.8rem', lineHeight: 1.5 }}>
+                                            Snack and drink signups are not available until the database migration is applied.
+                                        </div>
+                                    )}
+                                    {loadingVolunteers ? (
+                                        <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Loading...</div>
+                                    ) : volunteerNeeds.length === 0 ? (
+                                        <div style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>No snack or drink signups requested for this event.</div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {volunteerNeeds.map((need) => {
+                                                const meta = volunteerTypeMeta[need.type] || volunteerTypeMeta.OTHER;
+                                                const Icon = meta.icon;
+                                                const signedUp = need.signups.some((signup) => signup.userId === user?.id);
+                                                const isFull = need.signups.length >= need.slotsNeeded && !signedUp;
+
+                                                return (
+                                                    <div key={need.id} className="glass-subtle" style={{ padding: '0.75rem', display: 'grid', gap: '0.75rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                                            <div style={{ width: 34, height: 34, borderRadius: 8, display: 'grid', placeItems: 'center', color: meta.color, background: `${meta.color}18`, flexShrink: 0 }}>
+                                                                <Icon size={17} />
+                                                            </div>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{need.title}</div>
+                                                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: 2 }}>
+                                                                    {need.signups.length} of {need.slotsNeeded} claimed
+                                                                </div>
+                                                                {need.description && (
+                                                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.35rem' }}>{need.description}</div>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                className={`btn ${signedUp ? 'btn-outline' : 'btn-primary'} btn-sm`}
+                                                                onClick={() => handleVolunteerSignup(need, signedUp)}
+                                                                disabled={isFull || volunteerMigrationRequired}
+                                                                style={{ flexShrink: 0 }}
+                                                            >
+                                                                {signedUp ? 'Cancel' : isFull ? 'Full' : 'Sign up'}
+                                                            </button>
+                                                        </div>
+                                                        {need.signups.length > 0 && (
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                                                {need.signups.map((signup) => (
+                                                                    <span key={signup.id} className="badge" style={{ background: 'var(--surface-700)', color: 'var(--text-secondary)', border: '1px solid var(--surface-600)' }}>
+                                                                        {signup.userName}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Tabs */}
                             {isStaff && !selectedEventRsvps.isCancelled && (
                                 <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--surface-600)' }}>
-                                    {(['rsvps', 'attendance'] as const).map((tab) => (
+                                    {(['rsvps', 'attendance', 'volunteers'] as const).map((tab) => (
                                         <button
                                             key={tab}
                                             onClick={() => setEventModalTab(tab)}
@@ -695,7 +895,7 @@ export default function SchedulePage() {
                                                 textTransform: 'capitalize',
                                             }}
                                         >
-                                            {tab}
+                                            {tab === 'volunteers' ? 'Snacks' : tab}
                                         </button>
                                     ))}
                                 </div>
@@ -791,6 +991,123 @@ export default function SchedulePage() {
                                                 </div>
                                             ))}
                                         </div>
+                                    )}
+                                </>
+                            )}
+
+                            {/* Volunteers tab */}
+                            {isStaff && eventModalTab === 'volunteers' && !selectedEventRsvps.isCancelled && (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Snacks & Drinks</h3>
+                                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: 2 }}>
+                                                Add items parents can claim for this event.
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            onClick={saveVolunteerNeeds}
+                                            disabled={volunteersSaving || volunteerMigrationRequired}
+                                        >
+                                            {volunteersSaving ? 'Saving...' : 'Save'}
+                                        </button>
+                                    </div>
+
+                                    {volunteerError && (
+                                        <div style={{ marginBottom: '0.75rem', color: 'var(--danger-400)', fontSize: '0.8rem' }}>
+                                            {volunteerError}
+                                        </div>
+                                    )}
+                                    {volunteerMigrationRequired && (
+                                        <div style={{ marginBottom: '0.75rem', color: 'var(--warning-400)', fontSize: '0.8rem', lineHeight: 1.5 }}>
+                                            Snack and drink signups are installed in the app, but the database migration has not been applied yet.
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {volunteerDrafts.map((need, index) => {
+                                            const existing = need.id ? volunteerNeeds.find((current) => current.id === need.id) : null;
+
+                                            return (
+                                                <div key={need.id || `new-${index}`} className="glass-subtle" style={{ padding: '0.75rem', display: 'grid', gap: '0.75rem' }}>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 72px 34px', gap: '0.5rem', alignItems: 'center' }}>
+                                                        <select
+                                                            className="form-input form-select"
+                                                            value={need.type}
+                                                            onChange={(e) => setVolunteerDrafts((prev) => prev.map((item, i) => i === index ? { ...item, type: e.target.value as VolunteerNeedDraft['type'] } : item))}
+                                                            disabled={volunteerMigrationRequired}
+                                                            style={{ fontSize: '0.82rem' }}
+                                                        >
+                                                            <option value="SNACKS">Snacks</option>
+                                                            <option value="DRINKS">Drinks</option>
+                                                            <option value="OTHER">Other</option>
+                                                        </select>
+                                                        <input
+                                                            className="form-input"
+                                                            placeholder="Water bottles, fruit, post-game snacks"
+                                                            value={need.title}
+                                                            onChange={(e) => setVolunteerDrafts((prev) => prev.map((item, i) => i === index ? { ...item, title: e.target.value } : item))}
+                                                            disabled={volunteerMigrationRequired}
+                                                            style={{ fontSize: '0.82rem' }}
+                                                        />
+                                                        <input
+                                                            type="number"
+                                                            min={1}
+                                                            max={20}
+                                                            className="form-input"
+                                                            value={need.slotsNeeded}
+                                                            onChange={(e) => setVolunteerDrafts((prev) => prev.map((item, i) => i === index ? { ...item, slotsNeeded: Number(e.target.value) || 1 } : item))}
+                                                            aria-label="Slots needed"
+                                                            disabled={volunteerMigrationRequired}
+                                                            style={{ fontSize: '0.82rem' }}
+                                                        />
+                                                        <button
+                                                            className="btn btn-ghost btn-icon"
+                                                            onClick={() => setVolunteerDrafts((prev) => prev.filter((_, i) => i !== index))}
+                                                            aria-label="Remove volunteer need"
+                                                            disabled={volunteerMigrationRequired}
+                                                            style={{ width: 34, height: 34, color: 'var(--danger-400)' }}
+                                                        >
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    </div>
+                                                    <input
+                                                        className="form-input"
+                                                        placeholder="Optional note for parents"
+                                                        value={need.description}
+                                                        onChange={(e) => setVolunteerDrafts((prev) => prev.map((item, i) => i === index ? { ...item, description: e.target.value } : item))}
+                                                        disabled={volunteerMigrationRequired}
+                                                        style={{ fontSize: '0.82rem' }}
+                                                    />
+                                                    {existing && existing.signups.length > 0 && (
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                                                {existing.signups.length} signed up:
+                                                            </span>
+                                                            {existing.signups.map((signup) => (
+                                                                <span key={signup.id} className="badge" style={{ background: 'var(--surface-700)', color: 'var(--text-secondary)', border: '1px solid var(--surface-600)' }}>
+                                                                    {signup.userName}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <button
+                                        className="btn btn-outline"
+                                        onClick={() => setVolunteerDrafts((prev) => [...prev, emptyVolunteerNeed()])}
+                                        disabled={volunteerMigrationRequired}
+                                        style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem', gap: '0.4rem' }}
+                                    >
+                                        <Plus size={15} /> Add snack or drink
+                                    </button>
+
+                                    {loadingVolunteers && (
+                                        <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Loading...</div>
                                     )}
                                 </>
                             )}
