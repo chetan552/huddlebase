@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
         if (!user) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
+        if (user.role !== 'ADMIN' && user.role !== 'COACH') {
+            return NextResponse.json({ success: false, error: 'Only coaches can create teams' }, { status: 403 });
+        }
 
         const { name, sport, season, color } = await req.json();
 

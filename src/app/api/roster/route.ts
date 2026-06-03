@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { getSessionUser } from '@/lib/session';
 import { toCSV } from '@/lib/utils';
+import { isTeamStaff } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
     try {
@@ -78,10 +80,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Name, email, and team are required' }, { status: 400 });
         }
 
+        if (!(await isTeamStaff(user, teamId))) {
+            return NextResponse.json({ success: false, error: 'Only team staff can add roster members' }, { status: 403 });
+        }
+
         // Find or create user
         let playerUser = await prisma.user.findUnique({ where: { email } });
         if (!playerUser) {
-            const hashedPassword = await bcrypt.hash('password123', 12);
+            const temporaryPassword = randomBytes(24).toString('base64url');
+            const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
             playerUser = await prisma.user.create({
                 data: { email, password: hashedPassword, name, role: role || 'PLAYER', phone: phone || null },
             });

@@ -4,10 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { SPORTS } from '@/lib/constants';
 
 const ROLES = [
-    { value: 'ADMIN', label: 'Team Admin / Manager', icon: '🛡️', desc: 'Full control of team operations' },
     { value: 'COACH', label: 'Coach', icon: '📋', desc: 'Manage roster, schedule, and games' },
     { value: 'PARENT', label: 'Parent / Guardian', icon: '👪', desc: 'Track your child\'s activities' },
     { value: 'PLAYER', label: 'Player', icon: '🏃', desc: 'View schedule and RSVP' },
@@ -31,8 +29,8 @@ export default function RegisterPage() {
                 setError('All fields are required');
                 return;
             }
-            if (password.length < 6) {
-                setError('Password must be at least 6 characters');
+            if (password.length < 8) {
+                setError('Password must be at least 8 characters');
                 return;
             }
             setError('');

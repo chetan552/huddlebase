@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 export default function LoginPage() {
+  const showDemoLogin = process.env.NODE_ENV !== 'production';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -90,45 +91,49 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="auth-divider">
-            <span>or use demo account</span>
-          </div>
+          {showDemoLogin && (
+            <>
+              <div className="auth-divider">
+                <span>or use demo account</span>
+              </div>
 
-          <button
-            className="btn btn-outline"
-            style={{ width: '100%' }}
-            onClick={async () => {
-              setError('');
-              setLoading(true);
-              const result = await login('coach@huddlebase.com', 'password123');
-              if (result.success) {
-                router.push('/dashboard');
-              } else {
-                setError('Demo account not found. Please seed the database first.');
-              }
-              setLoading(false);
-            }}
-          >
-            🏈 Log in as Demo Coach
-          </button>
+              <button
+                className="btn btn-outline"
+                style={{ width: '100%' }}
+                onClick={async () => {
+                  setError('');
+                  setLoading(true);
+                  const result = await login('coach@huddlebase.com', 'password123');
+                  if (result.success) {
+                    router.push('/dashboard');
+                  } else {
+                    setError('Demo account not found. Please seed the database first.');
+                  }
+                  setLoading(false);
+                }}
+              >
+                🏈 Log in as Demo Coach
+              </button>
 
-          <button
-            className="btn btn-outline"
-            style={{ width: '100%', marginTop: '0.5rem' }}
-            onClick={async () => {
-              setError('');
-              setLoading(true);
-              const result = await login('parent@huddlebase.com', 'password123');
-              if (result.success) {
-                router.push('/dashboard');
-              } else {
-                setError('Demo account not found. Please seed the database first.');
-              }
-              setLoading(false);
-            }}
-          >
-            👪 Log in as Demo Parent
-          </button>
+              <button
+                className="btn btn-outline"
+                style={{ width: '100%', marginTop: '0.5rem' }}
+                onClick={async () => {
+                  setError('');
+                  setLoading(true);
+                  const result = await login('parent@huddlebase.com', 'password123');
+                  if (result.success) {
+                    router.push('/dashboard');
+                  } else {
+                    setError('Demo account not found. Please seed the database first.');
+                  }
+                  setLoading(false);
+                }}
+              >
+                👪 Log in as Demo Parent
+              </button>
+            </>
+          )}
 
           <p className="auth-footer">
             Don&apos;t have an account?{' '}

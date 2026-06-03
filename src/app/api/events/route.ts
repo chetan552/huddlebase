@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { sendEmail, eventCreatedEmail } from '@/lib/email';
+import { isTeamStaff } from '@/lib/permissions';
 
 function parseOptionalScore(value: unknown): number | null {
     if (value === undefined || value === null || value === '') return null;
@@ -64,6 +65,10 @@ export async function POST(req: NextRequest) {
 
         if (!title || !teamId || !startTime) {
             return NextResponse.json({ success: false, error: 'Title, team, and start time are required' }, { status: 400 });
+        }
+
+        if (!(await isTeamStaff(user, teamId))) {
+            return NextResponse.json({ success: false, error: 'Only team staff can create events' }, { status: 403 });
         }
 
         const parsedHomeScore = parseOptionalScore(homeScore);

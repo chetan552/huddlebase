@@ -1,36 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { getSessionUser } from '@/lib/session';
 
 export async function GET(req: NextRequest) {
     try {
-        // Check cookie first (web), then Authorization header (mobile)
-        const sessionCookie = req.cookies.get('session');
-        let userData: string | null = sessionCookie?.value || null;
-
-        if (!userData) {
-            const authHeader = req.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.slice(7);
-                try {
-                    userData = Buffer.from(token, 'base64').toString('utf-8');
-                } catch {
-                    userData = null;
-                }
-            }
-        }
-
-        if (!userData) {
+        const sessionUser = getSessionUser(req);
+        if (!sessionUser) {
             return NextResponse.json(
                 { success: false, error: 'Not authenticated' },
                 { status: 401 }
             );
         }
 
-        const parsed = JSON.parse(userData);
-
         // Fetch latest user data from DB to reflect avatar and profile updates
         const user = await prisma.user.findUnique({
-            where: { id: parsed.id },
+            where: { id: sessionUser.id },
             select: { id: true, email: true, name: true, role: true, avatar: true },
         });
 

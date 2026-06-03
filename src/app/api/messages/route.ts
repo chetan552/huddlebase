@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { sendEmail, newMessageEmail } from '@/lib/email';
+import { isTeamMember } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
     try {
@@ -15,6 +16,9 @@ export async function GET(req: NextRequest) {
 
         if (!teamId) {
             return NextResponse.json({ success: false, error: 'teamId is required' }, { status: 400 });
+        }
+        if (!(await isTeamMember(user, teamId))) {
+            return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
         }
 
         const messages = await prisma.message.findMany({
@@ -50,6 +54,9 @@ export async function POST(req: NextRequest) {
 
         if (!teamId || !content?.trim()) {
             return NextResponse.json({ success: false, error: 'teamId and content are required' }, { status: 400 });
+        }
+        if (!(await isTeamMember(user, teamId))) {
+            return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
         }
 
         const message = await prisma.message.create({

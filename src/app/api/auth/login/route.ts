@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { createSessionToken } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
     try {
@@ -40,13 +41,11 @@ export async function POST(req: NextRequest) {
             avatar: user.avatar,
         };
 
-        // Create a token for mobile clients (base64-encoded session data for MVP)
-        const token = Buffer.from(JSON.stringify(sessionUser)).toString('base64');
+        const token = createSessionToken(sessionUser);
 
         const response = NextResponse.json({ success: true, data: sessionUser, token });
 
-        // Set a simple session cookie (for MVP demo purposes)
-        response.cookies.set('session', JSON.stringify(sessionUser), {
+        response.cookies.set('session', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',

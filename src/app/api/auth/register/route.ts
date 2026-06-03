@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
+const PUBLIC_ROLES = new Set(['COACH', 'PARENT', 'PLAYER']);
+
 export async function POST(req: NextRequest) {
     try {
         const { email, password, name, role } = await req.json();
@@ -12,6 +14,14 @@ export async function POST(req: NextRequest) {
                 { status: 400 }
             );
         }
+        if (password.length < 8) {
+            return NextResponse.json(
+                { success: false, error: 'Password must be at least 8 characters' },
+                { status: 400 }
+            );
+        }
+
+        const requestedRole = PUBLIC_ROLES.has(role) ? role : 'PLAYER';
 
         // Check if user exists
         const existing = await prisma.user.findUnique({ where: { email } });
@@ -31,7 +41,7 @@ export async function POST(req: NextRequest) {
                 email,
                 password: hashedPassword,
                 name,
-                role: role || 'PLAYER',
+                role: requestedRole,
             },
             select: {
                 id: true,

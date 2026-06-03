@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { toCSV } from '@/lib/utils';
 import { sendEmail, invoiceCreatedEmail } from '@/lib/email';
+import { isTeamStaff, isUserOnTeam } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
     try {
@@ -24,7 +26,7 @@ export async function GET(req: NextRequest) {
         const linkedPlayerIds = familyLinks.map(link => link.childId);
         linkedPlayerIds.push(user.id); // Add self to the list
 
-        let whereClause: any = {};
+        let whereClause: Prisma.InvoiceWhereInput = {};
 
         if (user.role === 'ADMIN' || user.role === 'COACH') {
             const teamIds = userTeams.map((t) => t.teamId);
@@ -98,6 +100,14 @@ export async function POST(req: NextRequest) {
 
         if (!title || !amount || !dueDate || !teamId || !playerId) {
             return NextResponse.json({ success: false, error: 'All fields are required' }, { status: 400 });
+        }
+
+        if (!(await isTeamStaff(user, teamId))) {
+            return NextResponse.json({ success: false, error: 'Only team staff can create invoices' }, { status: 403 });
+        }
+
+        if (!(await isUserOnTeam(playerId, teamId))) {
+            return NextResponse.json({ success: false, error: 'Player must be on the selected team' }, { status: 400 });
         }
 
         const invoice = await prisma.invoice.create({
