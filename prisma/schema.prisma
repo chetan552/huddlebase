@@ -32,6 +32,7 @@ model User {
   volunteerSignups EventVolunteerSignup[]
   passwordResetTokens PasswordResetToken[]
   invites        TeamInvite[]
+  aiUsage        AiUsage[]
   invoices       Invoice[]       @relation("InvoicedPlayer")
   payments       Payment[]
   notifications  Notification[]
@@ -131,6 +132,20 @@ model TeamInvite {
 
   team Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AiUsage {
+  id           String   @id @default(uuid())
+  userId       String
+  feature      String
+  model        String
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, feature, createdAt])
 }
 
 // ============================================

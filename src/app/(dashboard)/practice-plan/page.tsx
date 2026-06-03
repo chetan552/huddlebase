@@ -1,23 +1,77 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '@/lib/auth';
+import { useEffect, useRef, useState } from 'react';
 import { SPORTS } from '@/lib/constants';
-import { Sparkles, Copy, Check, RefreshCw } from 'lucide-react';
+import { Sparkles, Copy, Check, RefreshCw, Clock, Dumbbell, ShieldCheck } from 'lucide-react';
 
-const AGE_GROUPS = ['U6–U8', 'U9–U10', 'U11–U12', 'U13–U14', 'U15–U16', 'U17–U18', 'Adult', 'Mixed ages'];
+const AGE_GROUPS = ['U6-U8', 'U9-U10', 'U11-U12', 'U13-U14', 'U15-U16', 'U17-U18', 'Adult', 'Mixed ages'];
 const DURATIONS = ['30', '45', '60', '75', '90', '120'];
 
+interface PracticePlanSection {
+    name: string;
+    durationMinutes: number;
+    setup: string;
+    instructions: string;
+    coachingPoints: string[];
+    progression: string;
+    regression: string;
+}
+
+interface PracticePlan {
+    title: string;
+    overview: string;
+    durationMinutes: number;
+    equipment: string[];
+    sections: PracticePlanSection[];
+    coachNotes: string[];
+    safetyNotes: string[];
+}
+
+interface UsageMeta {
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    remainingThisMonth: number;
+}
+
+function formatPlanForCopy(plan: PracticePlan) {
+    const sections = plan.sections.map((section, index) => [
+        `${index + 1}. ${section.name} (${section.durationMinutes} min)`,
+        `Setup: ${section.setup}`,
+        `Instructions: ${section.instructions}`,
+        `Coaching points: ${section.coachingPoints.join('; ')}`,
+        `Progression: ${section.progression}`,
+        `Regression: ${section.regression}`,
+    ].join('\n')).join('\n\n');
+
+    return [
+        plan.title,
+        `${plan.durationMinutes} minutes`,
+        '',
+        plan.overview,
+        '',
+        `Equipment: ${plan.equipment.join(', ') || 'None listed'}`,
+        '',
+        sections,
+        '',
+        `Coach notes:\n- ${plan.coachNotes.join('\n- ')}`,
+        '',
+        `Safety notes:\n- ${plan.safetyNotes.join('\n- ')}`,
+    ].join('\n');
+}
+
 export default function PracticePlanPage() {
-    const { user } = useAuth();
     const [form, setForm] = useState({
         sport: 'Soccer',
         duration: '60',
         skillFocus: '',
-        ageGroup: 'U13–U14',
+        ageGroup: 'U13-U14',
         playerCount: '',
+        equipment: '',
+        advanced: false,
     });
-    const [plan, setPlan] = useState('');
+    const [plan, setPlan] = useState<PracticePlan | null>(null);
+    const [usage, setUsage] = useState<UsageMeta | null>(null);
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
@@ -26,23 +80,43 @@ export default function PracticePlanPage() {
     useEffect(() => {
         const saved = localStorage.getItem('pp_plan');
         const savedForm = localStorage.getItem('pp_form');
-        if (saved) setPlan(saved);
-        if (savedForm) { try { setForm(JSON.parse(savedForm)); } catch { /* ignore */ } }
+        const savedUsage = localStorage.getItem('pp_usage');
+
+        if (saved) {
+            try { setPlan(JSON.parse(saved)); } catch { localStorage.removeItem('pp_plan'); }
+        }
+        if (savedForm) {
+            try { setForm((current) => ({ ...current, ...JSON.parse(savedForm) })); } catch { localStorage.removeItem('pp_form'); }
+        }
+        if (savedUsage) {
+            try { setUsage(JSON.parse(savedUsage)); } catch { localStorage.removeItem('pp_usage'); }
+        }
     }, []);
 
-    useEffect(() => { if (plan) localStorage.setItem('pp_plan', plan); }, [plan]);
-    useEffect(() => { localStorage.setItem('pp_form', JSON.stringify(form)); }, [form]);
+    useEffect(() => {
+        if (plan) localStorage.setItem('pp_plan', JSON.stringify(plan));
+    }, [plan]);
+
+    useEffect(() => {
+        if (usage) localStorage.setItem('pp_usage', JSON.stringify(usage));
+    }, [usage]);
+
+    useEffect(() => {
+        localStorage.setItem('pp_form', JSON.stringify(form));
+    }, [form]);
 
     const generate = async () => {
         if (!form.skillFocus.trim()) {
             setError('Please enter a skill focus.');
             return;
         }
-        setError(null);
-        setPlan('');
-        localStorage.removeItem('pp_plan');
-        setGenerating(true);
 
+        setError(null);
+        setPlan(null);
+        setUsage(null);
+        localStorage.removeItem('pp_plan');
+        localStorage.removeItem('pp_usage');
+        setGenerating(true);
         abortRef.current = new AbortController();
 
         try {
@@ -52,30 +126,21 @@ export default function PracticePlanPage() {
                 body: JSON.stringify(form),
                 signal: abortRef.current.signal,
             });
+            const payload = await res.json();
 
-            if (!res.ok) {
-                const err = await res.json();
-                setError(err.error || 'Failed to generate plan.');
-                setGenerating(false);
+            if (!res.ok || !payload.success) {
+                setError(payload.error || 'Failed to generate plan.');
                 return;
             }
 
-            const reader = res.body!.getReader();
-            const decoder = new TextDecoder();
-            let text = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                text += decoder.decode(value, { stream: true });
-                setPlan(text);
-            }
-        } catch (err: any) {
-            if (err.name !== 'AbortError') {
-                setError('Connection error. Please try again.');
-            }
+            setPlan(payload.data);
+            setUsage(payload.usage);
+        } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') return;
+            setError('Connection error. Please try again.');
         } finally {
             setGenerating(false);
+            abortRef.current = null;
         }
     };
 
@@ -85,49 +150,10 @@ export default function PracticePlanPage() {
     };
 
     const copy = async () => {
-        await navigator.clipboard.writeText(plan);
+        if (!plan) return;
+        await navigator.clipboard.writeText(formatPlanForCopy(plan));
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-    };
-
-    // Simple markdown-to-JSX renderer for headings, bold, bullets
-    const renderPlan = (text: string) => {
-        const lines = text.split('\n');
-        return lines.map((line, i) => {
-            if (line.startsWith('## ')) {
-                return <h2 key={i} style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: '1.5rem', marginBottom: '0.5rem', color: 'var(--primary-400)' }}>{line.slice(3)}</h2>;
-            }
-            if (line.startsWith('### ')) {
-                return <h3 key={i} style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: '1rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{line.slice(4)}</h3>;
-            }
-            if (line.startsWith('- **') || line.startsWith('- *')) {
-                const content = line.slice(2);
-                return <li key={i} style={{ marginBottom: '0.375rem', lineHeight: 1.6 }}>{renderInline(content)}</li>;
-            }
-            if (line.startsWith('- ')) {
-                return <li key={i} style={{ marginBottom: '0.25rem', lineHeight: 1.6 }}>{line.slice(2)}</li>;
-            }
-            if (line.startsWith('  - ')) {
-                return <li key={i} style={{ marginLeft: '1.25rem', marginBottom: '0.25rem', lineHeight: 1.6, listStyleType: 'circle' }}>{renderInline(line.slice(4))}</li>;
-            }
-            if (line.trim() === '') {
-                return <div key={i} style={{ height: '0.5rem' }} />;
-            }
-            return <p key={i} style={{ lineHeight: 1.7, marginBottom: '0.25rem' }}>{renderInline(line)}</p>;
-        });
-    };
-
-    const renderInline = (text: string) => {
-        const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
-        return parts.map((part, i) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-                return <strong key={i}>{part.slice(2, -2)}</strong>;
-            }
-            if (part.startsWith('*') && part.endsWith('*')) {
-                return <em key={i} style={{ color: 'var(--text-secondary)' }}>{part.slice(1, -1)}</em>;
-            }
-            return part;
-        });
     };
 
     return (
@@ -135,13 +161,11 @@ export default function PracticePlanPage() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title page-title--gradient">Practice Plan Generator</h1>
-                    <p className="page-subtitle">AI-generated practice plans tailored to your team</p>
+                    <p className="page-subtitle">AI-generated sessions with structured drills, coaching points, and safety notes</p>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.5rem', alignItems: 'start' }}>
-
-                {/* Form */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 340px) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
                 <div className="glass" style={{ padding: '1.5rem', borderRadius: '1rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <div className="form-group">
@@ -151,7 +175,7 @@ export default function PracticePlanPage() {
                                 value={form.sport}
                                 onChange={(e) => setForm({ ...form, sport: e.target.value })}
                             >
-                                {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                                {SPORTS.map((sport) => <option key={sport} value={sport}>{sport}</option>)}
                             </select>
                         </div>
 
@@ -162,7 +186,7 @@ export default function PracticePlanPage() {
                                 value={form.ageGroup}
                                 onChange={(e) => setForm({ ...form, ageGroup: e.target.value })}
                             >
-                                {AGE_GROUPS.map((a) => <option key={a} value={a}>{a}</option>)}
+                                {AGE_GROUPS.map((ageGroup) => <option key={ageGroup} value={ageGroup}>{ageGroup}</option>)}
                             </select>
                         </div>
 
@@ -173,7 +197,7 @@ export default function PracticePlanPage() {
                                 value={form.duration}
                                 onChange={(e) => setForm({ ...form, duration: e.target.value })}
                             >
-                                {DURATIONS.map((d) => <option key={d} value={d}>{d} minutes</option>)}
+                                {DURATIONS.map((duration) => <option key={duration} value={duration}>{duration} minutes</option>)}
                             </select>
                         </div>
 
@@ -181,7 +205,7 @@ export default function PracticePlanPage() {
                             <label className="form-label">Skill Focus <span style={{ color: 'var(--danger-400)' }}>*</span></label>
                             <input
                                 className="form-input"
-                                placeholder="e.g. Passing under pressure"
+                                placeholder="Passing under pressure"
                                 value={form.skillFocus}
                                 onChange={(e) => setForm({ ...form, skillFocus: e.target.value })}
                                 onKeyDown={(e) => { if (e.key === 'Enter' && !generating) generate(); }}
@@ -195,14 +219,37 @@ export default function PracticePlanPage() {
                                 type="number"
                                 min="2"
                                 max="50"
-                                placeholder="e.g. 16"
+                                placeholder="16"
                                 value={form.playerCount}
                                 onChange={(e) => setForm({ ...form, playerCount: e.target.value })}
                             />
                         </div>
 
+                        <div className="form-group">
+                            <label className="form-label">Available Equipment <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span></label>
+                            <input
+                                className="form-input"
+                                placeholder="Cones, balls, pinnies, goals"
+                                value={form.equipment}
+                                onChange={(e) => setForm({ ...form, equipment: e.target.value })}
+                            />
+                        </div>
+
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.85rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={form.advanced}
+                                onChange={(e) => setForm({ ...form, advanced: e.target.checked })}
+                                style={{ marginTop: 2 }}
+                            />
+                            <span>
+                                <span style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700 }}>Advanced coach plan</span>
+                                <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>Uses the premium model for more detailed progressions.</span>
+                            </span>
+                        </label>
+
                         {error && (
-                            <div style={{ padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(239,68,68,0.1)', color: 'var(--danger-400)', fontSize: '0.85rem' }}>
+                            <div style={{ padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(239,68,68,0.1)', color: 'var(--danger-400)', fontSize: '0.85rem', lineHeight: 1.5 }}>
                                 {error}
                             </div>
                         )}
@@ -224,53 +271,87 @@ export default function PracticePlanPage() {
                     </div>
                 </div>
 
-                {/* Output */}
                 <div>
                     {!plan && !generating && (
                         <div className="glass" style={{ padding: '3rem', borderRadius: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                             <Sparkles size={32} style={{ margin: '0 auto 1rem', opacity: 0.4 }} />
-                            <p style={{ fontSize: '1rem', fontWeight: 500 }}>Fill in the form and click Generate</p>
-                            <p style={{ fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.7 }}>Your practice plan will appear here</p>
+                            <p style={{ fontSize: '1rem', fontWeight: 600 }}>Build a practice plan from your coaching inputs</p>
+                            <p style={{ fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.75 }}>The result is structured for quick edits, sharing, and reuse.</p>
                         </div>
                     )}
 
-                    {(plan || generating) && (
+                    {generating && (
+                        <div className="glass" style={{ padding: '2rem', borderRadius: '1rem', color: 'var(--text-secondary)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                <RefreshCw size={17} style={{ animation: 'spin 1s linear infinite', color: 'var(--primary-400)' }} />
+                                Generating practice plan
+                            </div>
+                            <p style={{ marginTop: '0.75rem', lineHeight: 1.6 }}>Creating drills, progressions, regressions, and safety notes.</p>
+                        </div>
+                    )}
+
+                    {plan && !generating && (
                         <div className="glass" style={{ padding: '1.5rem', borderRadius: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                                <h2 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>
-                                    {generating ? (
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite', color: 'var(--primary-400)' }} />
-                                            Generating…
-                                        </span>
-                                    ) : (
-                                        `${form.sport} Practice Plan — ${form.duration} min`
-                                    )}
-                                </h2>
-                                {plan && !generating && (
-                                    <button className="btn btn-ghost btn-sm" onClick={copy} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                                        {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
-                                    </button>
-                                )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                                <div>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>{plan.title}</h2>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Clock size={14} /> {plan.durationMinutes} min</span>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Sparkles size={14} /> {usage?.model || 'AI generated'}</span>
+                                        {usage && <span>{usage.remainingThisMonth} plans left this month</span>}
+                                    </div>
+                                </div>
+                                <button className="btn btn-ghost btn-sm" onClick={copy} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
+                                    {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
+                                </button>
                             </div>
 
-                            <div style={{ fontSize: '0.9rem', lineHeight: 1.7 }}>
-                                <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
-                                    {renderPlan(plan)}
+                            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '1.25rem' }}>{plan.overview}</p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                                <div style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)' }}>
+                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', margin: '0 0 0.75rem' }}><Dumbbell size={15} /> Equipment</h3>
+                                    <ul style={{ margin: 0, paddingLeft: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: '0.86rem' }}>
+                                        {plan.equipment.map((item) => <li key={item}>{item}</li>)}
+                                    </ul>
+                                </div>
+                                <div style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)' }}>
+                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', margin: '0 0 0.75rem' }}><ShieldCheck size={15} /> Safety</h3>
+                                    <ul style={{ margin: 0, paddingLeft: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: '0.86rem' }}>
+                                        {plan.safetyNotes.map((note) => <li key={note}>{note}</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {plan.sections.map((section, index) => (
+                                    <div key={`${section.name}-${index}`} style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.035)', border: '1px solid var(--glass-border)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.65rem' }}>
+                                            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>{index + 1}. {section.name}</h3>
+                                            <span style={{ color: 'var(--primary-400)', fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{section.durationMinutes} min</span>
+                                        </div>
+                                        <div style={{ display: 'grid', gap: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: '0.88rem' }}>
+                                            <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Setup:</strong> {section.setup}</p>
+                                            <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Instructions:</strong> {section.instructions}</p>
+                                            <div>
+                                                <strong style={{ color: 'var(--text-primary)' }}>Coaching points:</strong>
+                                                <ul style={{ margin: '0.35rem 0 0', paddingLeft: '1.1rem' }}>
+                                                    {section.coachingPoints.map((point) => <li key={point}>{point}</li>)}
+                                                </ul>
+                                            </div>
+                                            <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Progression:</strong> {section.progression}</p>
+                                            <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Regression:</strong> {section.regression}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div style={{ marginTop: '1.25rem', padding: '1rem', borderRadius: '0.75rem', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.18)' }}>
+                                <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.6rem' }}>Coach Notes</h3>
+                                <ul style={{ margin: 0, paddingLeft: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: '0.88rem' }}>
+                                    {plan.coachNotes.map((note) => <li key={note}>{note}</li>)}
                                 </ul>
                             </div>
-
-                            {generating && (
-                                <div style={{ marginTop: '1rem', display: 'flex', gap: '4px' }}>
-                                    {[0, 1, 2].map((i) => (
-                                        <div key={i} style={{
-                                            width: 6, height: 6, borderRadius: '50%',
-                                            background: 'var(--primary-400)',
-                                            animation: `bounce 1s ${i * 0.2}s infinite`,
-                                        }} />
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
@@ -278,7 +359,11 @@ export default function PracticePlanPage() {
 
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+                @media (max-width: 860px) {
+                    .page-content > div[style*="grid-template-columns"] {
+                        grid-template-columns: 1fr !important;
+                    }
+                }
             `}</style>
         </div>
     );

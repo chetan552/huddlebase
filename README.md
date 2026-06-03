@@ -97,11 +97,11 @@ A full-stack team management platform for coaches, players, and parents — feat
 ### Payments
 - **Invoices** — Individual or bulk creation per player with CSV export
 - **Payment Tracking** — Pending / paid / overdue / cancelled lifecycle
-- **Checkout** — Simulated secure card checkout for players and parents
+- **Checkout** — Stripe Checkout handoff for players and parents
 
 ### Intelligence
 - **Analytics** — Attendance %, revenue trends, effort progression, invoice summaries (Chart.js)
-- **AI Practice Plans** — Gemini-generated practice plans with streaming response
+- **AI Practice Plans** — OpenAI-generated structured practice plans with per-user monthly limits
 - **Role-Based Access** — ADMIN, COACH, PARENT, PLAYER roles with navigation and API gating
 
 </td>
@@ -125,7 +125,7 @@ A full-stack team management platform for coaches, players, and parents — feat
 | **Icons** | [Lucide React](https://lucide.dev) | 1 |
 | **Charts** | [Chart.js](https://www.chartjs.org) + [react-chartjs-2](https://react-chartjs-2.js.org) | 4 / 5 |
 | **Email** | [Resend](https://resend.com) — event, announcement, message, and invoice templates | 6 |
-| **AI** | [Google Gemini SDK](https://ai.google.dev) — practice plan generation | 1 |
+| **AI** | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) — structured practice plan generation | — |
 | **Mobile** | [Expo](https://expo.dev) + [React Native](https://reactnative.dev) + [Expo Router](https://docs.expo.dev/router/introduction) | 54 / 0.81 / 6 |
 | **Navigation** | [React Navigation](https://reactnavigation.org) | 7 |
 | **Hosting** | [Vercel](https://vercel.com) (web) + Supabase (database) | — |
@@ -222,7 +222,7 @@ TeamManagementApp/
 |---|---|---|
 | `GET` | `/api/dashboard` | Aggregated dashboard stats |
 | `GET` | `/api/analytics` | Chart data (ADMIN/COACH) |
-| `POST` | `/api/practice-plan` | AI practice plan (Gemini, streaming) |
+| `POST` | `/api/practice-plan` | AI practice plan (OpenAI structured JSON) |
 | `POST` | `/api/upload` | File upload |
 
 All responses follow `{ success: boolean, data?, error? }`. Unauthenticated requests return `401`.
@@ -234,11 +234,22 @@ All responses follow `{ success: boolean, data?, error? }`. Unauthenticated requ
 ```env
 # Required
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?pgbouncer=true&connection_limit=1"
+SESSION_SECRET="replace-with-a-strong-random-secret"
 
 # Optional — emails silently skip if unset
 RESEND_API_KEY="re_xxxxxxxx"
 FROM_EMAIL="notifications@huddlebase.com"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Optional — required for Stripe Checkout payments
+STRIPE_SECRET_KEY="sk_live_xxxxxxxx"
+
+# Optional — required for AI practice plans
+OPENAI_API_KEY="sk-proj_xxxxxxxx"
+AI_PRACTICE_PLAN_MODEL="gpt-5-mini"
+AI_PRACTICE_PLAN_PREMIUM_MODEL="gpt-5.2"
+AI_PRACTICE_PLAN_MONTHLY_LIMIT="30"
+AI_PRACTICE_PLAN_MAX_OUTPUT_TOKENS="3000"
 ```
 
 ---
