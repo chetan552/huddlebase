@@ -18,6 +18,7 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('');
+    const [signupMode, setSignupMode] = useState<'password' | 'google'>('password');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { register } = useAuth();
@@ -35,6 +36,7 @@ export default function RegisterPage() {
 
         queueMicrotask(() => {
             setError(messages[oauthError] || 'Google sign-up failed. Please try again.');
+            setSignupMode('google');
             setStep(2);
         });
     }, []);
@@ -57,6 +59,13 @@ export default function RegisterPage() {
 
         if (!role) {
             setError('Please select a role');
+            return;
+        }
+
+        if (signupMode === 'google') {
+            setError('');
+            setLoading(true);
+            window.location.href = `/api/auth/google/start?flow=signup&role=${encodeURIComponent(role)}`;
             return;
         }
 
@@ -181,6 +190,7 @@ export default function RegisterPage() {
                                     className="btn btn-google btn-lg"
                                     onClick={() => {
                                         setError('');
+                                        setSignupMode('google');
                                         setStep(2);
                                     }}
                                 >
@@ -212,7 +222,10 @@ export default function RegisterPage() {
                                         type="button"
                                         className="btn btn-outline"
                                         style={{ flex: 1 }}
-                                        onClick={() => setStep(1)}
+                                        onClick={() => {
+                                            setSignupMode('password');
+                                            setStep(1);
+                                        }}
                                     >
                                         ← Back
                                     </button>
@@ -222,25 +235,33 @@ export default function RegisterPage() {
                                         style={{ flex: 2 }}
                                         disabled={loading || !role}
                                     >
-                                        {loading ? 'Creating Account...' : 'Create Account'}
+                                        {loading ? (signupMode === 'google' ? 'Opening Google...' : 'Creating Account...') : (signupMode === 'google' ? 'Continue with Google' : 'Create Account')}
                                     </button>
                                 </div>
 
-                                <div className="auth-divider">
-                                    <span>or continue with</span>
-                                </div>
+                                {signupMode === 'password' && (
+                                    <>
+                                        <div className="auth-divider">
+                                            <span>or continue with</span>
+                                        </div>
 
-                                <Link
-                                    href={`/api/auth/google/start?flow=signup&role=${encodeURIComponent(role || '')}`}
-                                    className={`btn btn-google btn-lg ${!role ? 'btn-disabled' : ''}`}
-                                    aria-disabled={!role}
-                                    onClick={(event) => {
-                                        if (!role) event.preventDefault();
-                                    }}
-                                >
-                                    <span className="google-mark">G</span>
-                                    Sign up with Google
-                                </Link>
+                                        <button
+                                            type="button"
+                                            className={`btn btn-google btn-lg ${!role ? 'btn-disabled' : ''}`}
+                                            aria-disabled={!role}
+                                            onClick={() => {
+                                                if (!role) return;
+                                                setSignupMode('google');
+                                                setError('');
+                                                setLoading(true);
+                                                window.location.href = `/api/auth/google/start?flow=signup&role=${encodeURIComponent(role)}`;
+                                            }}
+                                        >
+                                            <span className="google-mark">G</span>
+                                            Sign up with Google
+                                        </button>
+                                    </>
+                                )}
                             </>
                         )}
                     </form>
