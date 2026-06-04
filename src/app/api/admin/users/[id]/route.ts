@@ -19,7 +19,7 @@ export async function PATCH(
         }
 
         const { id } = await params;
-        const { role, coachApproved, suspended } = await req.json();
+        const { role, coachApproved, aiPracticePlanEnabled, suspended } = await req.json();
 
         if (!ADMIN_ROLES.has(role)) {
             return NextResponse.json({ success: false, error: 'Invalid role' }, { status: 400 });
@@ -33,17 +33,25 @@ export async function PATCH(
 
         const existing = await prisma.user.findUnique({
             where: { id },
-            select: { id: true, name: true, email: true, role: true, coachApproved: true, suspended: true },
+            select: { id: true, name: true, email: true, role: true, coachApproved: true, aiPracticePlanEnabled: true, suspended: true },
         });
         if (!existing) {
             return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
         }
 
+        const nextCoachApproved = role === 'COACH' ? Boolean(coachApproved) : role === 'ADMIN';
+        const nextAiPracticePlanEnabled = role === 'ADMIN'
+            ? true
+            : role === 'COACH' && nextCoachApproved
+                ? Boolean(aiPracticePlanEnabled)
+                : false;
+
         const updated = await prisma.user.update({
             where: { id },
             data: {
                 role,
-                coachApproved: role === 'COACH' ? Boolean(coachApproved) : role === 'ADMIN',
+                coachApproved: nextCoachApproved,
+                aiPracticePlanEnabled: nextAiPracticePlanEnabled,
                 suspended: Boolean(suspended),
             },
             select: {
@@ -52,6 +60,7 @@ export async function PATCH(
                 email: true,
                 role: true,
                 coachApproved: true,
+                aiPracticePlanEnabled: true,
                 suspended: true,
                 avatar: true,
                 createdAt: true,
@@ -69,11 +78,13 @@ export async function PATCH(
                 before: {
                     role: existing.role,
                     coachApproved: existing.coachApproved,
+                    aiPracticePlanEnabled: existing.aiPracticePlanEnabled,
                     suspended: existing.suspended,
                 },
                 after: {
                     role: updated.role,
                     coachApproved: updated.coachApproved,
+                    aiPracticePlanEnabled: updated.aiPracticePlanEnabled,
                     suspended: updated.suspended,
                 },
             },
@@ -87,6 +98,7 @@ export async function PATCH(
                 email: updated.email,
                 role: updated.role,
                 coachApproved: updated.coachApproved,
+                aiPracticePlanEnabled: updated.aiPracticePlanEnabled,
                 suspended: updated.suspended,
                 avatar: updated.avatar,
                 createdAt: updated.createdAt.toISOString(),

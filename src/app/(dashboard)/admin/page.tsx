@@ -11,6 +11,7 @@ type AdminUser = {
     email: string;
     role: string;
     coachApproved: boolean;
+    aiPracticePlanEnabled: boolean;
     suspended: boolean;
     avatar: string | null;
     createdAt: string;
@@ -137,6 +138,7 @@ export default function AdminPage() {
                 body: JSON.stringify({
                     role,
                     coachApproved: role === 'COACH' ? targetUser.coachApproved : role === 'ADMIN',
+                    aiPracticePlanEnabled: role === 'COACH' ? targetUser.aiPracticePlanEnabled : role === 'ADMIN',
                     suspended: targetUser.suspended,
                 }),
             });
@@ -174,7 +176,12 @@ export default function AdminPage() {
             const res = await fetch(`/api/admin/users/${targetUser.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: 'COACH', coachApproved, suspended: targetUser.suspended }),
+                body: JSON.stringify({
+                    role: 'COACH',
+                    coachApproved,
+                    aiPracticePlanEnabled: coachApproved ? targetUser.aiPracticePlanEnabled : false,
+                    suspended: targetUser.suspended,
+                }),
             });
             const json = await res.json();
             if (!json.success) {
@@ -202,7 +209,12 @@ export default function AdminPage() {
             const res = await fetch(`/api/admin/users/${targetUser.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: targetUser.role, coachApproved: targetUser.coachApproved, suspended }),
+                body: JSON.stringify({
+                    role: targetUser.role,
+                    coachApproved: targetUser.coachApproved,
+                    aiPracticePlanEnabled: targetUser.aiPracticePlanEnabled,
+                    suspended,
+                }),
             });
             const json = await res.json();
             if (!json.success) {
@@ -215,6 +227,39 @@ export default function AdminPage() {
                 users: current.users.map((adminUser) => adminUser.id === targetUser.id ? json.data : adminUser),
             } : current);
             setMessage(`${targetUser.name} was ${suspended ? 'suspended' : 'unsuspended'}.`);
+        } catch {
+            setError('Connection error. Please try again.');
+        } finally {
+            setBusyId('');
+        }
+    };
+
+    const updateAiPracticePlanAccess = async (targetUser: AdminUser, enabled: boolean) => {
+        setBusyId(targetUser.id);
+        setError('');
+        setMessage('');
+        try {
+            const res = await fetch(`/api/admin/users/${targetUser.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    role: targetUser.role,
+                    coachApproved: targetUser.coachApproved,
+                    aiPracticePlanEnabled: enabled,
+                    suspended: targetUser.suspended,
+                }),
+            });
+            const json = await res.json();
+            if (!json.success) {
+                setError(json.error || 'Could not update AI access.');
+                return;
+            }
+
+            setData((current) => current ? {
+                ...current,
+                users: current.users.map((adminUser) => adminUser.id === targetUser.id ? json.data : adminUser),
+            } : current);
+            setMessage(`AI practice plans were ${enabled ? 'enabled' : 'disabled'} for ${targetUser.name}.`);
         } catch {
             setError('Connection error. Please try again.');
         } finally {
@@ -389,6 +434,17 @@ export default function AdminPage() {
                                             {adminUser.coachApproved ? 'Revoke' : 'Approve'}
                                         </button>
                                     )}
+                                    {adminUser.role === 'COACH' && (
+                                        <button
+                                            type="button"
+                                            className={`btn ${adminUser.aiPracticePlanEnabled ? 'btn-outline' : 'btn-primary'}`}
+                                            onClick={() => updateAiPracticePlanAccess(adminUser, !adminUser.aiPracticePlanEnabled)}
+                                            disabled={busyId === adminUser.id || !adminUser.coachApproved || adminUser.suspended}
+                                            title={!adminUser.coachApproved ? 'Approve coach access before enabling AI features' : undefined}
+                                        >
+                                            {adminUser.aiPracticePlanEnabled ? 'Disable AI' : 'Enable AI'}
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         className={`btn ${adminUser.suspended ? 'btn-primary' : 'btn-outline'}`}
@@ -470,9 +526,14 @@ function UserStatus({ user }: { user: AdminUser }) {
     }
 
     return (
-        <span className={`badge ${ROLE_BADGE[user.role] || 'badge-neutral'}`} style={{ justifySelf: 'start' }}>
-            {user.role === 'COACH' && !user.coachApproved ? 'COACH PENDING' : user.role}
-        </span>
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', justifySelf: 'start' }}>
+            <span className={`badge ${ROLE_BADGE[user.role] || 'badge-neutral'}`}>
+                {user.role === 'COACH' && !user.coachApproved ? 'COACH PENDING' : user.role}
+            </span>
+            {user.role === 'COACH' && user.aiPracticePlanEnabled && (
+                <span className="badge badge-success">AI ENABLED</span>
+            )}
+        </div>
     );
 }
 

@@ -93,6 +93,31 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
+        const currentUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: {
+                role: true,
+                coachApproved: true,
+                aiPracticePlanEnabled: true,
+                suspended: true,
+            },
+        });
+
+        if (!currentUser || currentUser.suspended) {
+            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const canUsePracticePlan =
+            currentUser.role === 'ADMIN' ||
+            (currentUser.role === 'COACH' && currentUser.coachApproved && currentUser.aiPracticePlanEnabled);
+
+        if (!canUsePracticePlan) {
+            return NextResponse.json({
+                success: false,
+                error: 'AI practice plans are not enabled for your account. Ask an admin to unlock this feature.',
+            }, { status: 403 });
+        }
+
         const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
             return NextResponse.json({ success: false, error: 'AI features not configured (OPENAI_API_KEY missing)' }, { status: 503 });
