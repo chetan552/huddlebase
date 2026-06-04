@@ -515,79 +515,80 @@ export default function SettingsPage() {
                 </form>
             </div>
 
-            {/* Contact Admin */}
-            <div className="card" style={{ marginBottom: '1.5rem' }}>
-                <h2 className="card-title" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <LifeBuoy size={18} />
-                    Contact Admin
-                </h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', maxWidth: 720 }}>
-                    Send a request to your HuddleBase admins for account help, coach approval, team issues, billing, or AI access.
-                </p>
+            {user.role !== 'ADMIN' && (
+                <div className="card" style={{ marginBottom: '1.5rem' }}>
+                    <h2 className="card-title" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <LifeBuoy size={18} />
+                        Contact Admin
+                    </h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', maxWidth: 720 }}>
+                        Send a request to your HuddleBase admins for account help, coach approval, team issues, billing, or AI access.
+                    </p>
 
-                {supportError && <div className="auth-error" style={{ marginBottom: '1rem', maxWidth: '720px' }}><span>!</span>{supportError}</div>}
-                {supportSuccess && <div className="form-success" style={{ marginBottom: '1rem', maxWidth: '720px' }}>{supportSuccess}</div>}
+                    {supportError && <div className="auth-error" style={{ marginBottom: '1rem', maxWidth: '720px' }}><span>!</span>{supportError}</div>}
+                    {supportSuccess && <div className="form-success" style={{ marginBottom: '1rem', maxWidth: '720px' }}>{supportSuccess}</div>}
 
-                <form onSubmit={submitSupportRequest} style={{ display: 'grid', gap: '1rem', maxWidth: 720 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label" htmlFor="support-category">Category</label>
-                            <select
-                                id="support-category"
-                                className="form-input form-select"
-                                value={supportCategory}
-                                onChange={(e) => setSupportCategory(e.target.value)}
-                            >
-                                {SUPPORT_CATEGORIES.map((category) => (
-                                    <option key={category.value} value={category.value}>{category.label}</option>
-                                ))}
-                            </select>
+                    <form onSubmit={submitSupportRequest} style={{ display: 'grid', gap: '1rem', maxWidth: 720 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label" htmlFor="support-category">Category</label>
+                                <select
+                                    id="support-category"
+                                    className="form-input form-select"
+                                    value={supportCategory}
+                                    onChange={(e) => setSupportCategory(e.target.value)}
+                                >
+                                    {SUPPORT_CATEGORIES.map((category) => (
+                                        <option key={category.value} value={category.value}>{category.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label" htmlFor="support-subject">Subject</label>
+                                <input
+                                    id="support-subject"
+                                    className="form-input"
+                                    value={supportSubject}
+                                    onChange={(e) => {
+                                        setSupportSubject(e.target.value);
+                                        setSupportError('');
+                                        setSupportSuccess('');
+                                    }}
+                                    maxLength={140}
+                                    placeholder="Need AI access for practice plans"
+                                    required
+                                />
+                            </div>
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label" htmlFor="support-subject">Subject</label>
-                            <input
-                                id="support-subject"
+                            <label className="form-label" htmlFor="support-message">Message</label>
+                            <textarea
+                                id="support-message"
                                 className="form-input"
-                                value={supportSubject}
+                                rows={5}
+                                value={supportMessage}
                                 onChange={(e) => {
-                                    setSupportSubject(e.target.value);
+                                    setSupportMessage(e.target.value);
                                     setSupportError('');
                                     setSupportSuccess('');
                                 }}
-                                maxLength={140}
-                                placeholder="Need AI access for practice plans"
+                                maxLength={3000}
+                                placeholder="Tell the admins what you need help with."
                                 required
                             />
                         </div>
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label" htmlFor="support-message">Message</label>
-                        <textarea
-                            id="support-message"
-                            className="form-input"
-                            rows={5}
-                            value={supportMessage}
-                            onChange={(e) => {
-                                setSupportMessage(e.target.value);
-                                setSupportError('');
-                                setSupportSuccess('');
-                            }}
-                            maxLength={3000}
-                            placeholder="Tell the admins what you need help with."
-                            required
-                        />
-                    </div>
-                    <div>
-                        <button
-                            className="btn btn-primary"
-                            type="submit"
-                            disabled={supportLoading || !supportSubject.trim() || !supportMessage.trim()}
-                        >
-                            {supportLoading ? 'Sending...' : 'Send to Admin'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                        <div>
+                            <button
+                                className="btn btn-primary"
+                                type="submit"
+                                disabled={supportLoading || !supportSubject.trim() || !supportMessage.trim()}
+                            >
+                                {supportLoading ? 'Sending...' : 'Send to Admin'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             {/* Security */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>
