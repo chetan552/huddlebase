@@ -7,7 +7,16 @@ import QRCode from 'qrcode';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import { useTheme } from '@/lib/useTheme';
 import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/passwordPolicy';
-import { Bell, Mail, Moon, Camera, Loader2, LogOut, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Bell, Mail, Moon, Camera, Loader2, LogOut, AlertTriangle, ShieldCheck, LifeBuoy } from 'lucide-react';
+
+const SUPPORT_CATEGORIES = [
+    { value: 'ACCOUNT', label: 'Account' },
+    { value: 'COACH_APPROVAL', label: 'Coach approval' },
+    { value: 'TEAM_ISSUE', label: 'Team issue' },
+    { value: 'BILLING', label: 'Billing' },
+    { value: 'AI_ACCESS', label: 'AI access' },
+    { value: 'OTHER', label: 'Other' },
+];
 
 function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
     return (
@@ -68,6 +77,12 @@ export default function SettingsPage() {
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [deleteError, setDeleteError] = useState('');
+    const [supportCategory, setSupportCategory] = useState('OTHER');
+    const [supportSubject, setSupportSubject] = useState('');
+    const [supportMessage, setSupportMessage] = useState('');
+    const [supportLoading, setSupportLoading] = useState(false);
+    const [supportError, setSupportError] = useState('');
+    const [supportSuccess, setSupportSuccess] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const darkMode = theme === 'dark';
 
@@ -183,6 +198,44 @@ export default function SettingsPage() {
     const handleLogout = async () => {
         await logout();
         router.push('/login');
+    };
+
+    const submitSupportRequest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSupportLoading(true);
+        setSupportError('');
+        setSupportSuccess('');
+
+        const subject = supportSubject.trim();
+        const message = supportMessage.trim();
+
+        if (!subject || !message) {
+            setSupportError('Subject and message are required.');
+            setSupportLoading(false);
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/support', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: supportCategory, subject, message }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setSupportError(data.error || 'Could not submit your request.');
+                return;
+            }
+
+            setSupportSubject('');
+            setSupportMessage('');
+            setSupportCategory('OTHER');
+            setSupportSuccess('Your request was sent to the admins.');
+        } catch {
+            setSupportError('Connection error. Please try again.');
+        } finally {
+            setSupportLoading(false);
+        }
     };
 
     const deleteAccount = async (e: React.FormEvent) => {
@@ -459,6 +512,80 @@ export default function SettingsPage() {
                     >
                         {profileLoading ? 'Saving...' : 'Save Profile'}
                     </button>
+                </form>
+            </div>
+
+            {/* Contact Admin */}
+            <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <h2 className="card-title" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <LifeBuoy size={18} />
+                    Contact Admin
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', maxWidth: 720 }}>
+                    Send a request to your HuddleBase admins for account help, coach approval, team issues, billing, or AI access.
+                </p>
+
+                {supportError && <div className="auth-error" style={{ marginBottom: '1rem', maxWidth: '720px' }}><span>!</span>{supportError}</div>}
+                {supportSuccess && <div className="form-success" style={{ marginBottom: '1rem', maxWidth: '720px' }}>{supportSuccess}</div>}
+
+                <form onSubmit={submitSupportRequest} style={{ display: 'grid', gap: '1rem', maxWidth: 720 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" htmlFor="support-category">Category</label>
+                            <select
+                                id="support-category"
+                                className="form-input form-select"
+                                value={supportCategory}
+                                onChange={(e) => setSupportCategory(e.target.value)}
+                            >
+                                {SUPPORT_CATEGORIES.map((category) => (
+                                    <option key={category.value} value={category.value}>{category.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" htmlFor="support-subject">Subject</label>
+                            <input
+                                id="support-subject"
+                                className="form-input"
+                                value={supportSubject}
+                                onChange={(e) => {
+                                    setSupportSubject(e.target.value);
+                                    setSupportError('');
+                                    setSupportSuccess('');
+                                }}
+                                maxLength={140}
+                                placeholder="Need AI access for practice plans"
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" htmlFor="support-message">Message</label>
+                        <textarea
+                            id="support-message"
+                            className="form-input"
+                            rows={5}
+                            value={supportMessage}
+                            onChange={(e) => {
+                                setSupportMessage(e.target.value);
+                                setSupportError('');
+                                setSupportSuccess('');
+                            }}
+                            maxLength={3000}
+                            placeholder="Tell the admins what you need help with."
+                            required
+                        />
+                    </div>
+                    <div>
+                        <button
+                            className="btn btn-primary"
+                            type="submit"
+                            disabled={supportLoading || !supportSubject.trim() || !supportMessage.trim()}
+                        >
+                            {supportLoading ? 'Sending...' : 'Send to Admin'}
+                        </button>
+                    </div>
                 </form>
             </div>
 

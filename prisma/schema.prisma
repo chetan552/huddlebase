@@ -39,6 +39,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   invites        TeamInvite[]
   aiUsage        AiUsage[]
+  supportRequests SupportRequest[]
   invoices       Invoice[]       @relation("InvoicedPlayer")
   payments       Payment[]
   notifications  Notification[]
@@ -48,6 +49,26 @@ model User {
   givenFeedback    PlayerFeedback[] @relation("GivenFeedback")
   children       FamilyLink[]    @relation("ParentLinks")
   parents        FamilyLink[]    @relation("ChildLinks")
+}
+
+model SupportRequest {
+  id             String   @id @default(uuid())
+  requesterId    String
+  requesterName  String
+  requesterEmail String
+  requesterRole  String
+  category       String   @default("OTHER")
+  subject        String
+  message        String
+  status         String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  adminNote      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  requester User @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([requesterId])
 }
 
 model AuditLog {

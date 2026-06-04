@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Users, UserCog, Trophy, CalendarDays, Receipt, Trash2, RefreshCw, History } from 'lucide-react';
+import { ShieldCheck, Users, UserCog, Trophy, CalendarDays, Receipt, Trash2, RefreshCw, History, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 type AdminUser = {
@@ -43,16 +43,32 @@ type AuditLog = {
     createdAt: string;
 };
 
+type SupportRequest = {
+    id: string;
+    requesterName: string;
+    requesterEmail: string;
+    requesterRole: string;
+    category: string;
+    subject: string;
+    message: string;
+    status: string;
+    adminNote: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
 type AdminData = {
     stats: {
         users: number;
         teams: number;
         events: number;
         invoices: number;
+        openSupportRequests: number;
         roleCounts: Record<string, number>;
     };
     users: AdminUser[];
     teams: AdminTeam[];
+    supportRequests: SupportRequest[];
     auditLogs: AuditLog[];
 };
 
@@ -68,7 +84,7 @@ export default function AdminPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
     const [data, setData] = useState<AdminData | null>(null);
-    const [activeTab, setActiveTab] = useState<'coachRequests' | 'users' | 'teams' | 'audit'>('coachRequests');
+    const [activeTab, setActiveTab] = useState<'coachRequests' | 'users' | 'teams' | 'support' | 'audit'>('coachRequests');
     const [query, setQuery] = useState('');
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
@@ -124,6 +140,20 @@ export default function AdminPage() {
             team.name.toLowerCase().includes(term) ||
             team.sport.toLowerCase().includes(term) ||
             team.staff.some((staff) => staff.name.toLowerCase().includes(term) || staff.email.toLowerCase().includes(term))
+        );
+    }, [data, query]);
+
+    const filteredSupportRequests = useMemo(() => {
+        const term = query.trim().toLowerCase();
+        if (!data) return [];
+        if (!term) return data.supportRequests;
+        return data.supportRequests.filter((request) =>
+            request.requesterName.toLowerCase().includes(term) ||
+            request.requesterEmail.toLowerCase().includes(term) ||
+            request.subject.toLowerCase().includes(term) ||
+            request.message.toLowerCase().includes(term) ||
+            request.category.toLowerCase().includes(term) ||
+            request.status.toLowerCase().includes(term)
         );
     }, [data, query]);
 
@@ -321,6 +351,40 @@ export default function AdminPage() {
         }
     };
 
+    const updateSupportRequest = async (request: SupportRequest, status: string, adminNote?: string) => {
+        setBusyId(request.id);
+        setError('');
+        setMessage('');
+        try {
+            const res = await fetch(`/api/admin/support/${request.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, adminNote: adminNote ?? request.adminNote ?? '' }),
+            });
+            const json = await res.json();
+            if (!json.success) {
+                setError(json.error || 'Could not update support request.');
+                return;
+            }
+
+            setData((current) => current ? {
+                ...current,
+                supportRequests: current.supportRequests.map((item) => item.id === request.id ? json.data : item),
+                stats: {
+                    ...current.stats,
+                    openSupportRequests: current.supportRequests
+                        .map((item) => item.id === request.id ? json.data : item)
+                        .filter((item) => item.status !== 'RESOLVED').length,
+                },
+            } : current);
+            setMessage('Support request updated.');
+        } catch {
+            setError('Connection error. Please try again.');
+        } finally {
+            setBusyId('');
+        }
+    };
+
     if (loading || !user || user.role !== 'ADMIN') {
         return null;
     }
@@ -346,6 +410,7 @@ export default function AdminPage() {
                 <StatCard icon={<Trophy size={20} />} label="Teams" value={data?.stats.teams ?? 0} />
                 <StatCard icon={<CalendarDays size={20} />} label="Events" value={data?.stats.events ?? 0} />
                 <StatCard icon={<Receipt size={20} />} label="Invoices" value={data?.stats.invoices ?? 0} />
+                <StatCard icon={<MessageSquare size={20} />} label="Open Requests" value={data?.stats.openSupportRequests ?? 0} />
             </div>
 
             <div className="card" style={{ marginBottom: '1.5rem' }}>
@@ -373,6 +438,13 @@ export default function AdminPage() {
                             Teams
                         </button>
                         <button
+                            className={`btn ${activeTab === 'support' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => setActiveTab('support')}
+                        >
+                            <MessageSquare size={16} />
+                            Support
+                        </button>
+                        <button
                             className={`btn ${activeTab === 'audit' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => setActiveTab('audit')}
                         >
@@ -384,7 +456,7 @@ export default function AdminPage() {
                         className="form-input"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={activeTab === 'teams' ? 'Search teams...' : activeTab === 'audit' ? 'Search audit...' : 'Search users...'}
+                        placeholder={activeTab === 'teams' ? 'Search teams...' : activeTab === 'support' ? 'Search support...' : activeTab === 'audit' ? 'Search audit...' : 'Search users...'}
                         style={{ maxWidth: 320 }}
                     />
                 </div>
@@ -512,6 +584,12 @@ export default function AdminPage() {
                         ))}
                         {filteredTeams.length === 0 && <EmptyState label="No teams match your search." />}
                     </div>
+                ) : activeTab === 'support' ? (
+                    <SupportList
+                        requests={filteredSupportRequests}
+                        busyId={busyId}
+                        onUpdate={updateSupportRequest}
+                    />
                 ) : (
                     <AuditList logs={data?.auditLogs || []} query={query} />
                 )}
@@ -583,6 +661,86 @@ function UserList({
                     </div>
                 </div>
             ))}
+        </div>
+    );
+}
+
+function SupportList({
+    requests,
+    busyId,
+    onUpdate,
+}: {
+    requests: SupportRequest[];
+    busyId: string;
+    onUpdate: (request: SupportRequest, status: string, adminNote?: string) => void;
+}) {
+    const [notes, setNotes] = useState<Record<string, string>>({});
+
+    if (requests.length === 0) return <EmptyState label="No support requests match your search." />;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {requests.map((request) => {
+                const noteValue = notes[request.id] ?? request.adminNote ?? '';
+                return (
+                    <div key={request.id} className="glass-subtle" style={{ padding: '1rem', display: 'grid', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) auto', gap: '1rem', alignItems: 'start' }}>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                                    <span className={`badge ${request.status === 'RESOLVED' ? 'badge-success' : request.status === 'IN_PROGRESS' ? 'badge-primary' : 'badge-neutral'}`}>
+                                        {request.status.replace('_', ' ')}
+                                    </span>
+                                    <span className="badge badge-neutral">{request.category.replace('_', ' ')}</span>
+                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '0.78rem' }}>
+                                        {new Date(request.createdAt).toLocaleString()}
+                                    </span>
+                                </div>
+                                <div style={{ fontWeight: 800, fontSize: '1rem' }}>{request.subject}</div>
+                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.2rem' }}>
+                                    {request.requesterName} ({request.requesterRole}) · {request.requesterEmail}
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                {['OPEN', 'IN_PROGRESS', 'RESOLVED'].map((status) => (
+                                    <button
+                                        key={status}
+                                        type="button"
+                                        className={`btn ${request.status === status ? 'btn-primary' : 'btn-outline'}`}
+                                        onClick={() => onUpdate(request, status, noteValue)}
+                                        disabled={busyId === request.id}
+                                    >
+                                        {status === 'IN_PROGRESS' ? 'In Progress' : status[0] + status.slice(1).toLowerCase()}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                            {request.message}
+                        </div>
+                        <div style={{ display: 'grid', gap: '0.5rem' }}>
+                            <label className="form-label" htmlFor={`support-note-${request.id}`}>Admin note</label>
+                            <textarea
+                                id={`support-note-${request.id}`}
+                                className="form-input"
+                                rows={3}
+                                value={noteValue}
+                                onChange={(event) => setNotes((current) => ({ ...current, [request.id]: event.target.value }))}
+                                placeholder="Internal note for admins..."
+                            />
+                            <div>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline"
+                                    onClick={() => onUpdate(request, request.status, noteValue)}
+                                    disabled={busyId === request.id || noteValue === (request.adminNote ?? '')}
+                                >
+                                    Save Note
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }

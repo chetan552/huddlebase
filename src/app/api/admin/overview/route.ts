@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
         }
 
-        const [users, teams, auditLogs, eventsCount, invoicesCount] = await Promise.all([
+        const [users, teams, supportRequests, auditLogs, eventsCount, invoicesCount] = await Promise.all([
             prisma.user.findMany({
                 select: {
                     id: true,
@@ -59,6 +59,13 @@ export async function GET(req: NextRequest) {
                 },
                 orderBy: { createdAt: 'desc' },
             }),
+            prisma.supportRequest.findMany({
+                orderBy: [
+                    { status: 'asc' },
+                    { createdAt: 'desc' },
+                ],
+                take: 100,
+            }),
             prisma.auditLog.findMany({
                 orderBy: { createdAt: 'desc' },
                 take: 50,
@@ -71,6 +78,7 @@ export async function GET(req: NextRequest) {
             counts[adminUser.role] = (counts[adminUser.role] || 0) + 1;
             return counts;
         }, {});
+        const openSupportRequests = supportRequests.filter((request) => request.status !== 'RESOLVED').length;
 
         return NextResponse.json({
             success: true,
@@ -80,6 +88,7 @@ export async function GET(req: NextRequest) {
                     teams: teams.length,
                     events: eventsCount,
                     invoices: invoicesCount,
+                    openSupportRequests,
                     roleCounts,
                 },
                 users: users.map((adminUser) => ({
@@ -111,6 +120,19 @@ export async function GET(req: NextRequest) {
                         name: member.user.name,
                         email: member.user.email,
                     })),
+                })),
+                supportRequests: supportRequests.map((request) => ({
+                    id: request.id,
+                    requesterName: request.requesterName,
+                    requesterEmail: request.requesterEmail,
+                    requesterRole: request.requesterRole,
+                    category: request.category,
+                    subject: request.subject,
+                    message: request.message,
+                    status: request.status,
+                    adminNote: request.adminNote,
+                    createdAt: request.createdAt.toISOString(),
+                    updatedAt: request.updatedAt.toISOString(),
                 })),
                 auditLogs: auditLogs.map((log) => ({
                     id: log.id,
