@@ -62,7 +62,7 @@ function formatEventDate(iso: string): string {
     return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + `, ${time}`;
 }
 
-function AdminDashboard({ user }: { user: { name: string; role: string } }) {
+function AdminDashboard({ user }: { user: { name: string; role: string; coachApproved: boolean } }) {
     const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
     const [events, setEvents] = useState<Event[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -72,7 +72,7 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
     const [announcementForm, setAnnouncementForm] = useState({ teamId: '', title: '', body: '', priority: 'NORMAL' });
     const [posting, setPosting] = useState(false);
 
-    const isStaff = user.role === 'ADMIN' || user.role === 'COACH';
+    const isStaff = user.role === 'ADMIN' || (user.role === 'COACH' && user.coachApproved);
 
     useEffect(() => {
         Promise.all([
@@ -144,6 +144,21 @@ function AdminDashboard({ user }: { user: { name: string; role: string } }) {
                     </div>
                 )}
             </div>
+
+            {user.role === 'COACH' && !user.coachApproved && (
+                <div className="card" style={{ marginBottom: '1.5rem', borderColor: 'rgba(245, 158, 11, 0.35)', background: 'rgba(245, 158, 11, 0.08)' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                        <AlertTriangle size={20} color="var(--warning-400)" />
+                        <div>
+                            <div style={{ fontWeight: 800, marginBottom: '0.35rem' }}>Coach access pending approval</div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                                Your coach request is waiting for admin approval. Team creation, roster management, scheduling,
+                                invoices, announcements, analytics, and practice plans unlock after approval.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Stat Cards */}
             <div className="grid-stats">

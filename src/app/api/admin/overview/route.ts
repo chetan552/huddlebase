@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
                     name: true,
                     email: true,
                     role: true,
+                    coachApproved: true,
                     avatar: true,
                     createdAt: true,
                     _count: {
@@ -80,6 +81,7 @@ export async function GET(req: NextRequest) {
                     name: adminUser.name,
                     email: adminUser.email,
                     role: adminUser.role,
+                    coachApproved: adminUser.coachApproved,
                     avatar: adminUser.avatar,
                     createdAt: adminUser.createdAt.toISOString(),
                     teamCount: adminUser._count.teamMembers,

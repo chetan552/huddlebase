@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { sendEmail, announcementEmail } from '@/lib/email';
+import { isApprovedCoachOrAdmin } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
     const user = getSessionUser(req);
@@ -55,8 +56,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Only coaches and admins can post announcements
-    if (user.role !== 'COACH' && user.role !== 'ADMIN') {
-        return NextResponse.json({ success: false, error: 'Only coaches and admins can post announcements' }, { status: 403 });
+    if (!isApprovedCoachOrAdmin(user)) {
+        return NextResponse.json({ success: false, error: 'Coach approval is required to post announcements' }, { status: 403 });
     }
 
     try {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { isTeamStaff } from '@/lib/permissions';
 
 function isVolunteerTableMissing(error: unknown) {
     return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
@@ -101,13 +102,11 @@ export async function POST(
 
         const { id: eventId } = await params;
         const event = await getEventForUser(eventId, user.id);
-        const memberRole = event?.team.members[0]?.role;
-        const isStaff = user.role === 'ADMIN' || user.role === 'COACH' || memberRole === 'COACH' || memberRole === 'MANAGER';
 
         if (!event) {
             return NextResponse.json({ success: false, error: 'Event not found' }, { status: 404 });
         }
-        if (!isStaff) {
+        if (!(await isTeamStaff(user, event.teamId))) {
             return NextResponse.json({ success: false, error: 'Only staff can manage volunteer needs' }, { status: 403 });
         }
 

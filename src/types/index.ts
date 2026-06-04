@@ -18,6 +18,7 @@ export interface SessionUser {
     email: string;
     name: string;
     role: UserRole;
+    coachApproved: boolean;
     avatar?: string;
 }
 

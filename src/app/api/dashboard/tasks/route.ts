@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { isApprovedCoachOrAdmin } from '@/lib/permissions';
 
 type Severity = 'high' | 'medium' | 'low';
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        if (user.role !== 'ADMIN' && user.role !== 'COACH') {
+        if (!isApprovedCoachOrAdmin(user)) {
             return NextResponse.json({ success: true, data: [] });
         }
 

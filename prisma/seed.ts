@@ -25,7 +25,7 @@ async function main() {
 
     // Create users
     const coach = await prisma.user.create({
-        data: { email: 'coach@huddlebase.com', password, name: 'Coach Williams', role: 'COACH', phone: '(555) 100-0001' },
+        data: { email: 'coach@huddlebase.com', password, name: 'Coach Williams', role: 'COACH', coachApproved: true, phone: '(555) 100-0001' },
     });
     const admin = await prisma.user.create({
         data: { email: 'admin@huddlebase.com', password, name: 'Alex Admin', role: 'ADMIN', phone: '(555) 100-0002' },

@@ -10,7 +10,7 @@ export default function PlayerProfilePage() {
     const router = useRouter();
     const params = useParams();
     const playerId = params.id as string;
-    const isCoach = user?.role === 'COACH' || user?.role === 'ADMIN';
+    const isCoach = user?.role === 'ADMIN' || (user?.role === 'COACH' && user.coachApproved);
 
     // State placeholders for MVP
     const [stats, setStats] = useState<any[]>([]);

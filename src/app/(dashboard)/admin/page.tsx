@@ -10,6 +10,7 @@ type AdminUser = {
     name: string;
     email: string;
     role: string;
+    coachApproved: boolean;
     avatar: string | null;
     createdAt: string;
     teamCount: number;
@@ -120,7 +121,10 @@ export default function AdminPage() {
             const res = await fetch(`/api/admin/users/${targetUser.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role }),
+                body: JSON.stringify({
+                    role,
+                    coachApproved: role === 'COACH' ? targetUser.coachApproved : role === 'ADMIN',
+                }),
             });
             const json = await res.json();
             if (!json.success) {
@@ -141,6 +145,34 @@ export default function AdminPage() {
                 },
             } : current);
             setMessage(`${targetUser.name}'s role was updated to ${role}.`);
+        } catch {
+            setError('Connection error. Please try again.');
+        } finally {
+            setBusyId('');
+        }
+    };
+
+    const updateCoachApproval = async (targetUser: AdminUser, coachApproved: boolean) => {
+        setBusyId(targetUser.id);
+        setError('');
+        setMessage('');
+        try {
+            const res = await fetch(`/api/admin/users/${targetUser.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: 'COACH', coachApproved }),
+            });
+            const json = await res.json();
+            if (!json.success) {
+                setError(json.error || 'Could not update coach approval.');
+                return;
+            }
+
+            setData((current) => current ? {
+                ...current,
+                users: current.users.map((adminUser) => adminUser.id === targetUser.id ? json.data : adminUser),
+            } : current);
+            setMessage(`${targetUser.name}'s coach access was ${coachApproved ? 'approved' : 'revoked'}.`);
         } catch {
             setError('Connection error. Please try again.');
         } finally {
@@ -241,17 +273,30 @@ export default function AdminPage() {
                                     </div>
                                 </div>
                                 <span className={`badge ${ROLE_BADGE[adminUser.role] || 'badge-neutral'}`} style={{ justifySelf: 'start' }}>
-                                    {adminUser.role}
+                                    {adminUser.role === 'COACH' && !adminUser.coachApproved ? 'COACH PENDING' : adminUser.role}
                                 </span>
-                                <select
-                                    className="form-input form-select"
-                                    value={adminUser.role}
-                                    onChange={(e) => updateUserRole(adminUser, e.target.value)}
-                                    disabled={busyId === adminUser.id || adminUser.id === user.id}
-                                    title={adminUser.id === user.id ? 'You cannot remove your own admin role' : 'Change role'}
-                                >
-                                    {ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
-                                </select>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <select
+                                        className="form-input form-select"
+                                        value={adminUser.role}
+                                        onChange={(e) => updateUserRole(adminUser, e.target.value)}
+                                        disabled={busyId === adminUser.id || adminUser.id === user.id}
+                                        title={adminUser.id === user.id ? 'You cannot remove your own admin role' : 'Change role'}
+                                        style={{ flex: '1 1 140px' }}
+                                    >
+                                        {ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
+                                    </select>
+                                    {adminUser.role === 'COACH' && (
+                                        <button
+                                            type="button"
+                                            className={`btn ${adminUser.coachApproved ? 'btn-outline' : 'btn-primary'}`}
+                                            onClick={() => updateCoachApproval(adminUser, !adminUser.coachApproved)}
+                                            disabled={busyId === adminUser.id}
+                                        >
+                                            {adminUser.coachApproved ? 'Revoke' : 'Approve'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                         {filteredUsers.length === 0 && <EmptyState label="No users match your search." />}

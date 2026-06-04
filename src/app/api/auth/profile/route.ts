@@ -25,7 +25,7 @@ export async function PATCH(req: NextRequest) {
                 ...(avatar !== undefined ? { avatar } : {}),
                 ...(phone !== undefined ? { phone } : {}),
             },
-            select: { id: true, name: true, email: true, role: true, avatar: true, phone: true },
+            select: { id: true, name: true, email: true, role: true, coachApproved: true, avatar: true, phone: true },
         });
 
         const response = NextResponse.json({ success: true, data: updated });

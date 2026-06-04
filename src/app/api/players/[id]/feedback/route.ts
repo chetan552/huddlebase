@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { isApprovedCoachOrAdmin } from '@/lib/permissions';
 
 export async function GET(
     req: NextRequest,
@@ -32,7 +33,7 @@ export async function POST(
 ) {
     try {
         const user = getSessionUser(req);
-        if (!user || user.role !== 'COACH') {
+        if (!user || !isApprovedCoachOrAdmin(user)) {
             return NextResponse.json({ success: false, error: 'Unauthorized. Coaches only.' }, { status: 403 });
         }
 

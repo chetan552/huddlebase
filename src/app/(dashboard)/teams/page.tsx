@@ -26,7 +26,7 @@ export default function TeamsPage() {
     const [formData, setFormData] = useState({ name: '', sport: 'Basketball', season: '', color: '#3b82f6' });
     const [loading, setLoading] = useState(false);
     const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
-    const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
+    const isStaff = user?.role === 'ADMIN' || (user?.role === 'COACH' && user.coachApproved);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [logoUploading, setLogoUploading] = useState(false);
     const logoInputRef = useRef<HTMLInputElement>(null);

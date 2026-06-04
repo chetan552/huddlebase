@@ -40,7 +40,7 @@ export default function PaymentsPage() {
     const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
     const [paymentError, setPaymentError] = useState<string | null>(null);
 
-    const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
+    const isStaff = user?.role === 'ADMIN' || (user?.role === 'COACH' && user.coachApproved);
 
     const fetchInvoices = async () => {
         try {

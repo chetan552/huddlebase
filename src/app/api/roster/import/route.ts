@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { getSessionUser } from '@/lib/session';
+import { isApprovedCoachOrAdmin } from '@/lib/permissions';
 
 interface ImportRecord {
     name: string;
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        const isStaff = user.role === 'ADMIN' || user.role === 'COACH';
+        const isStaff = isApprovedCoachOrAdmin(user);
         if (!isStaff) {
             return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
         }

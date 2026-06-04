@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { isApprovedCoachOrAdmin } from '@/lib/permissions';
 
 export async function DELETE(
     req: NextRequest,
@@ -8,7 +9,7 @@ export async function DELETE(
 ) {
     try {
         const user = getSessionUser(req);
-        if (!user || (user.role !== 'COACH' && user.role !== 'ADMIN')) {
+        if (!user || !isApprovedCoachOrAdmin(user)) {
             return NextResponse.json({ success: false, error: 'Unauthorized. Staff only.' }, { status: 403 });
         }
 

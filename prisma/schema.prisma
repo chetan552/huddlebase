@@ -17,6 +17,7 @@ model User {
   password      String?
   name          String
   role          String    @default("PLAYER") // ADMIN, COACH, PARENT, PLAYER
+  coachApproved Boolean   @default(false)
   avatar        String?
   phone         String?
   twoFactorEnabled Boolean @default(false)

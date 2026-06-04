@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
             const temporaryPassword = randomBytes(24).toString('base64url');
             const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
             playerUser = await prisma.user.create({
-                data: { email, password: hashedPassword, name, role: role || 'PLAYER', phone: phone || null },
+                data: { email, password: hashedPassword, name, role: role || 'PLAYER', coachApproved: role === 'COACH', phone: phone || null },
             });
         }
 

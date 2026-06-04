@@ -2,10 +2,13 @@ import prisma from '@/lib/db';
 import type { SessionUser } from '@/lib/session';
 
 const STAFF_TEAM_ROLES = new Set(['COACH', 'MANAGER']);
-const STAFF_USER_ROLES = new Set(['ADMIN', 'COACH']);
 
 export function isGlobalStaff(user: SessionUser): boolean {
-    return STAFF_USER_ROLES.has(user.role);
+    return user.role === 'ADMIN' || (user.role === 'COACH' && user.coachApproved);
+}
+
+export function isApprovedCoachOrAdmin(user: SessionUser): boolean {
+    return isGlobalStaff(user);
 }
 
 export async function getTeamMembership(userId: string, teamId: string) {
@@ -26,6 +29,7 @@ export async function isTeamMember(user: SessionUser, teamId: string): Promise<b
 
 export async function isTeamStaff(user: SessionUser, teamId: string): Promise<boolean> {
     if (user.role === 'ADMIN') return true;
+    if (user.role === 'COACH' && !user.coachApproved) return false;
     const membership = await getTeamMembership(user.id, teamId);
     return Boolean(membership && (STAFF_TEAM_ROLES.has(membership.role) || user.role === 'COACH'));
 }

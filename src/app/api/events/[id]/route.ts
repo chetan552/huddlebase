@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { sendEmail, eventCancelledEmail } from '@/lib/email';
+import { isTeamStaff } from '@/lib/permissions';
 
 function parseOptionalScore(value: unknown): number | null {
     if (value === undefined || value === null || value === '') return null;
@@ -32,12 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             return NextResponse.json({ success: false, error: 'Event not found' }, { status: 404 });
         }
 
-        // Only staff can cancel events
-        const membership = await prisma.teamMember.findFirst({
-            where: { teamId: event.teamId, userId: user.id },
-        });
-        const isStaff = user.role === 'ADMIN' || user.role === 'COACH' || membership?.role === 'COACH';
-        if (!isStaff) {
+        if (!(await isTeamStaff(user, event.teamId))) {
             return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
         }
 

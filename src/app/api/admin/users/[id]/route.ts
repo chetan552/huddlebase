@@ -18,7 +18,7 @@ export async function PATCH(
         }
 
         const { id } = await params;
-        const { role } = await req.json();
+        const { role, coachApproved } = await req.json();
 
         if (!ADMIN_ROLES.has(role)) {
             return NextResponse.json({ success: false, error: 'Invalid role' }, { status: 400 });
@@ -29,12 +29,16 @@ export async function PATCH(
 
         const updated = await prisma.user.update({
             where: { id },
-            data: { role },
+            data: {
+                role,
+                coachApproved: role === 'COACH' ? Boolean(coachApproved) : role === 'ADMIN',
+            },
             select: {
                 id: true,
                 name: true,
                 email: true,
                 role: true,
+                coachApproved: true,
                 avatar: true,
                 createdAt: true,
                 _count: { select: { teamMembers: true, authAccounts: true } },
@@ -48,6 +52,7 @@ export async function PATCH(
                 name: updated.name,
                 email: updated.email,
                 role: updated.role,
+                coachApproved: updated.coachApproved,
                 avatar: updated.avatar,
                 createdAt: updated.createdAt.toISOString(),
                 teamCount: updated._count.teamMembers,

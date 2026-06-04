@@ -38,7 +38,7 @@ export default function RosterPage() {
     const [loading, setLoading] = useState(false);
     const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
     const [formError, setFormError] = useState<string | null>(null);
-    const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
+    const isStaff = user?.role === 'ADMIN' || (user?.role === 'COACH' && user.coachApproved);
 
     // Import state
     const [showImportModal, setShowImportModal] = useState(false);

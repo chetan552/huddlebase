@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { isApprovedCoachOrAdmin } from '@/lib/permissions';
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,8 +10,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        if (user.role !== 'ADMIN' && user.role !== 'COACH') {
-            return NextResponse.json({ success: false, error: 'Only coaches and admins can create invoices' }, { status: 403 });
+        if (!isApprovedCoachOrAdmin(user)) {
+            return NextResponse.json({ success: false, error: 'Coach approval is required to create invoices' }, { status: 403 });
         }
 
         const { title, description, amount, dueDate, teamId, playerIds } = await req.json();

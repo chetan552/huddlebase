@@ -4,7 +4,7 @@ import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { toCSV } from '@/lib/utils';
 import { sendEmail, invoiceCreatedEmail } from '@/lib/email';
-import { isTeamStaff, isUserOnTeam } from '@/lib/permissions';
+import { isGlobalStaff, isTeamStaff, isUserOnTeam } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
     try {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
         let whereClause: Prisma.InvoiceWhereInput = {};
 
-        if (user.role === 'ADMIN' || user.role === 'COACH') {
+        if (isGlobalStaff(user)) {
             const teamIds = userTeams.map((t) => t.teamId);
             whereClause = {
                 OR: [

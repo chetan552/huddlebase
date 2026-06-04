@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
                     name: profile.name || email.split('@')[0],
                     avatar: profile.picture,
                     role: state.role,
+                    coachApproved: false,
                 },
             });
 

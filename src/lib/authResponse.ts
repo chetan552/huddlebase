@@ -6,6 +6,7 @@ export function buildSessionUser(user: {
     email: string;
     name: string;
     role: string;
+    coachApproved?: boolean | null;
     avatar: string | null;
 }): SessionUser {
     return {
@@ -13,6 +14,7 @@ export function buildSessionUser(user: {
         email: user.email,
         name: user.name,
         role: user.role,
+        coachApproved: Boolean(user.coachApproved),
         avatar: user.avatar,
     };
 }

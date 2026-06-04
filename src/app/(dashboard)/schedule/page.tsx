@@ -138,7 +138,7 @@ export default function SchedulePage() {
     const [volunteerSuccess, setVolunteerSuccess] = useState<string | null>(null);
     const [volunteerMigrationRequired, setVolunteerMigrationRequired] = useState(false);
     const searchParams = useSearchParams();
-    const isStaff = user?.role === 'ADMIN' || user?.role === 'COACH';
+    const isStaff = user?.role === 'ADMIN' || (user?.role === 'COACH' && user.coachApproved);
     const isParent = user?.role === 'PARENT';
 
     const fetchEvents = async () => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { isTeamStaff } from '@/lib/permissions';
 
 export async function GET(
     req: NextRequest,
@@ -81,12 +82,7 @@ export async function POST(
             return NextResponse.json({ success: false, error: 'Event not found' }, { status: 404 });
         }
 
-        // Verify caller is staff on this team
-        const membership = await prisma.teamMember.findFirst({
-            where: { teamId: event.teamId, userId: user.id },
-        });
-        const isStaff = user.role === 'ADMIN' || user.role === 'COACH' || membership?.role === 'COACH';
-        if (!isStaff) {
+        if (!(await isTeamStaff(user, event.teamId))) {
             return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
         }
 
