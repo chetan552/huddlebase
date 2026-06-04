@@ -60,7 +60,7 @@ const SECTIONS = [
     title: 'Your Choices and Rights',
     body: [
       'You can update your profile name and avatar in Settings. You can also request password resets and configure account security options where available.',
-      'You may ask to access, correct, export, or delete personal information, subject to identity verification and legal or operational limits.',
+      'You may delete your account from Settings or ask to access, correct, export, or delete personal information, subject to identity verification and legal or operational limits.',
       'Team members should contact their coach or team administrator for team-level corrections, roster updates, family link changes, or removal from a team.',
       'You can opt out of non-essential communications where available, but transactional notices may still be sent when needed for service, security, or team operations.',
     ],

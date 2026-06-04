@@ -64,6 +64,10 @@ export default function SettingsPage() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+    const [deletePassword, setDeletePassword] = useState('');
+    const [deleteConfirmation, setDeleteConfirmation] = useState('');
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const darkMode = theme === 'dark';
 
@@ -179,6 +183,35 @@ export default function SettingsPage() {
     const handleLogout = async () => {
         await logout();
         router.push('/login');
+    };
+
+    const deleteAccount = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setDeleteLoading(true);
+        setDeleteError('');
+
+        try {
+            const res = await fetch('/api/auth/account', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    password: deletePassword,
+                    confirmation: deleteConfirmation,
+                }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setDeleteError(data.error || 'Could not delete account.');
+                return;
+            }
+
+            await logout();
+            router.push('/login');
+        } catch {
+            setDeleteError('Connection error. Please try again.');
+        } finally {
+            setDeleteLoading(false);
+        }
     };
 
     const sendPasswordReset = async () => {
@@ -704,12 +737,57 @@ export default function SettingsPage() {
                     <AlertTriangle size={18} />
                     Danger Zone
                 </h2>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                    Once you log out, you&apos;ll need to sign in again to access your teams.
-                </p>
-                <button className="btn btn-danger" onClick={handleLogout} style={{ gap: '0.5rem' }}>
-                    <LogOut size={16} /> Log Out
-                </button>
+                <div className="glass-subtle" style={{ padding: '1rem', marginBottom: '1rem' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                        Once you log out, you&apos;ll need to sign in again to access your teams.
+                    </p>
+                    <button className="btn btn-danger" onClick={handleLogout} style={{ gap: '0.5rem' }}>
+                        <LogOut size={16} /> Log Out
+                    </button>
+                </div>
+
+                <form className="glass-subtle" style={{ padding: '1rem' }} onSubmit={deleteAccount}>
+                    <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>Delete Account</div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.6 }}>
+                        Permanently delete your account and remove your memberships, messages, RSVP records, attendance, notifications,
+                        family links, feedback, and other user-owned data. This cannot be undone. If you are the last admin or the last
+                        staff member on a team, you&apos;ll need to transfer access or delete that team first.
+                    </p>
+
+                    {deleteError && <div className="auth-error" style={{ marginBottom: '1rem' }}><span>!</span>{deleteError}</div>}
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" htmlFor="delete-password">Password</label>
+                            <input
+                                id="delete-password"
+                                className="form-input"
+                                type="password"
+                                value={deletePassword}
+                                onChange={(e) => setDeletePassword(e.target.value)}
+                                placeholder="Required for password accounts"
+                                autoComplete="current-password"
+                            />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" htmlFor="delete-confirmation">Type DELETE</label>
+                            <input
+                                id="delete-confirmation"
+                                className="form-input"
+                                value={deleteConfirmation}
+                                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                placeholder="DELETE"
+                            />
+                        </div>
+                        <button
+                            className="btn btn-danger"
+                            type="submit"
+                            disabled={deleteLoading || deleteConfirmation !== 'DELETE'}
+                        >
+                            {deleteLoading ? 'Deleting...' : 'Delete Account'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
