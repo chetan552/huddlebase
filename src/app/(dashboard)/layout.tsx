@@ -10,6 +10,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardList,
   MessageCircle, CreditCard, Settings, Bell, Zap,
   BarChart3, Sparkles, Menu, LogOut, ChevronLeft, X, Sun, Moon,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface Notification {
@@ -32,6 +33,7 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   '/payments':  <CreditCard     size={18} strokeWidth={1.75} />,
   '/analytics':     <BarChart3  size={18} strokeWidth={1.75} />,
   '/practice-plan': <Sparkles  size={18} strokeWidth={1.75} />,
+  '/admin':         <ShieldCheck size={18} strokeWidth={1.75} />,
   '/settings':      <Settings  size={18} strokeWidth={1.75} />,
 };
 

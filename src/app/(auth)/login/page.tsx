@@ -192,6 +192,8 @@ export default function LoginPage() {
           <p className="auth-footer">
             Don&apos;t have an account?{' '}
             <Link href="/register">Create one</Link>
+            <br />
+            <Link href="/privacy">Privacy Policy</Link>
           </p>
         </div>
       </div>

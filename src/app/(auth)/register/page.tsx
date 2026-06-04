@@ -232,6 +232,8 @@ export default function RegisterPage() {
                     <p className="auth-footer">
                         Already have an account?{' '}
                         <Link href="/login">Sign in</Link>
+                        <br />
+                        <Link href="/privacy">Privacy Policy</Link>
                     </p>
                 </div>
             </div>

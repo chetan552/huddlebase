@@ -502,6 +502,7 @@ export default function LandingPage() {
             <p className="landing-footer__copy">
               © 2026 HuddleBase. Built for coaches who hate admin work.
             </p>
+            <Link href="/privacy" className="landing-footer__link">Privacy Policy</Link>
           </div>
         </div>
       </footer>

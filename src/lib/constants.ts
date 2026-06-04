@@ -84,6 +84,7 @@ export const NAV_ITEMS = [
     { label: 'Payments', href: '/payments', icon: '💵' },
     { label: 'Analytics', href: '/analytics', icon: '📈', roles: ['ADMIN', 'COACH'] },
     { label: 'Practice Plan', href: '/practice-plan', icon: '🏋️', roles: ['ADMIN', 'COACH'] },
+    { label: 'Admin', href: '/admin', icon: '🛡️', roles: ['ADMIN'] },
     { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 

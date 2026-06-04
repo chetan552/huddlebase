@@ -44,6 +44,10 @@ export default function SettingsPage() {
     const [notifications, setNotifications] = useState(true);
     const [emailUpdates, setEmailUpdates] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [profileName, setProfileName] = useState('');
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [profileError, setProfileError] = useState('');
+    const [profileMessage, setProfileMessage] = useState('');
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [recoveryCodesRemaining, setRecoveryCodesRemaining] = useState(0);
     const [securityPassword, setSecurityPassword] = useState('');
@@ -62,6 +66,10 @@ export default function SettingsPage() {
     const [changePasswordLoading, setChangePasswordLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const darkMode = theme === 'dark';
+
+    useEffect(() => {
+        if (user?.name) setProfileName(user.name);
+    }, [user?.name]);
 
     useEffect(() => {
         fetch('/api/auth/2fa/status')
@@ -126,6 +134,45 @@ export default function SettingsPage() {
             console.error('Upload failed:', err);
         } finally {
             setUploading(false);
+        }
+    };
+
+    const updateProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const nextName = profileName.trim();
+
+        setProfileError('');
+        setProfileMessage('');
+
+        if (!nextName) {
+            setProfileError('Name is required.');
+            return;
+        }
+
+        if (nextName === user?.name) {
+            setProfileMessage('Profile is already up to date.');
+            return;
+        }
+
+        setProfileLoading(true);
+        try {
+            const res = await fetch('/api/auth/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: nextName }),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setProfileError(data.error || 'Could not update profile.');
+                return;
+            }
+
+            setProfileMessage('Profile updated.');
+            if (refreshUser) await refreshUser();
+        } catch {
+            setProfileError('Connection error. Please try again.');
+        } finally {
+            setProfileLoading(false);
         }
     };
 
@@ -345,10 +392,24 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', maxWidth: '600px' }}>
+                {profileError && <div className="auth-error" style={{ marginBottom: '1rem', maxWidth: '600px' }}><span>!</span>{profileError}</div>}
+                {profileMessage && <div className="form-success" style={{ marginBottom: '1rem', maxWidth: '600px' }}>{profileMessage}</div>}
+
+                <form onSubmit={updateProfile} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', maxWidth: '600px', alignItems: 'end' }}>
                     <div className="form-group" style={{ flex: '1 1 250px' }}>
-                        <label className="form-label">Full Name</label>
-                        <input className="form-input" value={user.name} readOnly />
+                        <label className="form-label" htmlFor="profile-name">Full Name</label>
+                        <input
+                            id="profile-name"
+                            className="form-input"
+                            value={profileName}
+                            onChange={(e) => {
+                                setProfileName(e.target.value);
+                                setProfileError('');
+                                setProfileMessage('');
+                            }}
+                            autoComplete="name"
+                            required
+                        />
                     </div>
                     <div className="form-group" style={{ flex: '1 1 250px' }}>
                         <label className="form-label">Email</label>
@@ -358,7 +419,14 @@ export default function SettingsPage() {
                         <label className="form-label">Role</label>
                         <input className="form-input" value={user.role} readOnly />
                     </div>
-                </div>
+                    <button
+                        className="btn btn-primary"
+                        type="submit"
+                        disabled={profileLoading || !profileName.trim() || profileName.trim() === user.name}
+                    >
+                        {profileLoading ? 'Saving...' : 'Save Profile'}
+                    </button>
+                </form>
             </div>
 
             {/* Security */}
