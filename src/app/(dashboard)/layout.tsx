@@ -128,6 +128,7 @@ function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen: boolea
       case 'NEW_EVENT': return <Calendar size={14} />;
       case 'NEW_MESSAGE': return <MessageCircle size={14} />;
       case 'INVOICE_DUE': return <CreditCard size={14} />;
+      case 'SUPPORT_REQUEST': return <ShieldCheck size={14} />;
       default: return <Bell size={14} />;
     }
   };

@@ -26,17 +26,38 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Message must be 3000 characters or less' }, { status: 400 });
         }
 
-        const supportRequest = await prisma.supportRequest.create({
-            data: {
-                requesterId: user.id,
-                requesterName: user.name,
-                requesterEmail: user.email,
-                requesterRole: user.role,
-                category: cleanCategory,
-                subject: cleanSubject,
-                message: cleanMessage,
-            },
-            select: { id: true, status: true, createdAt: true },
+        const supportRequest = await prisma.$transaction(async (tx) => {
+            const created = await tx.supportRequest.create({
+                data: {
+                    requesterId: user.id,
+                    requesterName: user.name,
+                    requesterEmail: user.email,
+                    requesterRole: user.role,
+                    category: cleanCategory,
+                    subject: cleanSubject,
+                    message: cleanMessage,
+                },
+                select: { id: true, status: true, subject: true, requesterName: true, createdAt: true },
+            });
+
+            const admins = await tx.user.findMany({
+                where: { role: 'ADMIN', suspended: false },
+                select: { id: true },
+            });
+
+            if (admins.length > 0) {
+                await tx.notification.createMany({
+                    data: admins.map((admin) => ({
+                        userId: admin.id,
+                        type: 'SUPPORT_REQUEST',
+                        title: 'New support request',
+                        body: `${created.requesterName}: ${created.subject}`,
+                        link: '/admin?tab=support',
+                    })),
+                });
+            }
+
+            return created;
         });
 
         return NextResponse.json({

@@ -97,6 +97,11 @@ export default function AdminPage() {
         }
     }, [loading, router, user]);
 
+    useEffect(() => {
+        const tab = new URLSearchParams(window.location.search).get('tab');
+        if (tab === 'support') setActiveTab('support');
+    }, []);
+
     const loadAdminData = async () => {
         setRefreshing(true);
         setError('');
@@ -443,6 +448,11 @@ export default function AdminPage() {
                         >
                             <MessageSquare size={16} />
                             Support
+                            {(data?.stats.openSupportRequests ?? 0) > 0 && (
+                                <span className="badge badge-danger" style={{ marginLeft: '0.25rem' }}>
+                                    {(data?.stats.openSupportRequests ?? 0) > 99 ? '99+' : data?.stats.openSupportRequests}
+                                </span>
+                            )}
                         </button>
                         <button
                             className={`btn ${activeTab === 'audit' ? 'btn-primary' : 'btn-outline'}`}
