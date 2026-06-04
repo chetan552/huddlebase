@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
@@ -22,6 +22,22 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const { register } = useAuth();
     const router = useRouter();
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const oauthError = params.get('error');
+        if (!oauthError) return;
+
+        const messages: Record<string, string> = {
+            google_role_required: 'Choose a role before signing up with Google.',
+            google_signup_required: 'Choose a role to finish creating your Google account.',
+        };
+
+        queueMicrotask(() => {
+            setError(messages[oauthError] || 'Google sign-up failed. Please try again.');
+            setStep(2);
+        });
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -215,7 +231,7 @@ export default function RegisterPage() {
                                 </div>
 
                                 <Link
-                                    href={`/api/auth/google/start?role=${encodeURIComponent(role || 'PLAYER')}`}
+                                    href={`/api/auth/google/start?flow=signup&role=${encodeURIComponent(role || '')}`}
                                     className={`btn btn-google btn-lg ${!role ? 'btn-disabled' : ''}`}
                                     aria-disabled={!role}
                                     onClick={(event) => {

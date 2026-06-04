@@ -12,6 +12,7 @@ export interface GoogleOAuthState {
     csrf: string;
     next: string;
     role: string;
+    flow: 'login' | 'signup';
 }
 
 export interface GoogleProfile {
@@ -49,6 +50,10 @@ export function normalizeOAuthRole(role: string | null): string {
     return role && PUBLIC_ROLES.has(role) ? role : 'PLAYER';
 }
 
+export function isValidOAuthRole(role: string | null): role is string {
+    return Boolean(role && PUBLIC_ROLES.has(role));
+}
+
 export function normalizeOAuthNext(next: string | null): string {
     if (!next || !next.startsWith('/') || next.startsWith('//')) {
         return '/dashboard';
@@ -75,8 +80,10 @@ export function createGoogleAuthorizationResponse(req: NextRequest) {
     const { clientId } = getGoogleOAuthConfig();
     const csrf = randomBytes(24).toString('base64url');
     const next = normalizeOAuthNext(req.nextUrl.searchParams.get('next'));
-    const role = normalizeOAuthRole(req.nextUrl.searchParams.get('role'));
-    const state = encodeState({ csrf, next, role });
+    const rawRole = req.nextUrl.searchParams.get('role');
+    const flow = req.nextUrl.searchParams.get('flow') === 'signup' ? 'signup' : 'login';
+    const role = normalizeOAuthRole(rawRole);
+    const state = encodeState({ csrf, next, role, flow });
     const url = new URL(GOOGLE_AUTH_URL);
 
     url.searchParams.set('client_id', clientId);

@@ -27,6 +27,7 @@ export default function LoginPage() {
       google_invalid_state: 'Google sign-in expired. Please try again.',
       google_unverified_email: 'Google account email must be verified.',
       google_two_factor_enabled: 'Use email and password for accounts with two-factor authentication enabled.',
+      google_signup_required: 'Create an account first so you can choose your role.',
       google_login_failed: 'Google sign-in failed. Please try again.',
     };
 
@@ -140,7 +141,7 @@ export default function LoginPage() {
             <span>or continue with</span>
           </div>
 
-          <Link href="/api/auth/google/start" className="btn btn-google btn-lg">
+          <Link href="/api/auth/google/start?flow=login" className="btn btn-google btn-lg">
             <span className="google-mark">G</span>
             Sign in with Google
           </Link>

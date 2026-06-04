@@ -10,6 +10,7 @@ import {
 } from '@/lib/googleOAuth';
 
 const TWO_FACTOR_GOOGLE_ERROR = 'GOOGLE_TWO_FACTOR_ENABLED';
+const GOOGLE_SIGNUP_REQUIRED_ERROR = 'GOOGLE_SIGNUP_REQUIRED';
 
 function redirectWithError(req: NextRequest, error: string) {
     const response = NextResponse.redirect(new URL(`/login?error=${error}`, req.url));
@@ -52,6 +53,7 @@ export async function GET(req: NextRequest) {
 
             const existingUser = await tx.user.findUnique({ where: { email } });
             if (existingUser?.twoFactorEnabled) throw new Error(TWO_FACTOR_GOOGLE_ERROR);
+            if (!existingUser && state.flow !== 'signup') throw new Error(GOOGLE_SIGNUP_REQUIRED_ERROR);
 
             const linkedUser = existingUser ?? await tx.user.create({
                 data: {
@@ -83,6 +85,11 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         if (error instanceof Error && error.message === TWO_FACTOR_GOOGLE_ERROR) {
             return redirectWithError(req, 'google_two_factor_enabled');
+        }
+        if (error instanceof Error && error.message === GOOGLE_SIGNUP_REQUIRED_ERROR) {
+            const response = NextResponse.redirect(new URL('/register?error=google_signup_required', req.url));
+            clearGoogleStateCookie(response);
+            return response;
         }
 
         console.error('Google OAuth callback error:', error);
