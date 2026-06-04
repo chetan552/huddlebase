@@ -358,7 +358,10 @@ export default function AdminPage() {
                         {filteredUsers.map((adminUser) => (
                             <div key={adminUser.id} className="glass-subtle" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'center' }}>
                                 <div style={{ minWidth: 0 }}>
-                                    <div style={{ fontWeight: 700 }}>{adminUser.name}</div>
+                                    <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                        {adminUser.name}
+                                        {adminUser.id === user.id && <span className="badge badge-neutral">You</span>}
+                                    </div>
                                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{adminUser.email}</div>
                                     <div style={{ color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: '0.25rem' }}>
                                         {adminUser.teamCount} team{adminUser.teamCount === 1 ? '' : 's'} · {adminUser.authProviderCount > 0 ? 'OAuth linked' : 'Password account'}
@@ -372,7 +375,7 @@ export default function AdminPage() {
                                         onChange={(e) => updateUserRole(adminUser, e.target.value)}
                                         disabled={busyId === adminUser.id || adminUser.id === user.id}
                                         title={adminUser.id === user.id ? 'You cannot remove your own admin role' : 'Change role'}
-                                        style={{ flex: '1 1 140px' }}
+                                        style={{ flex: '1 1 140px', cursor: adminUser.id === user.id ? 'not-allowed' : undefined }}
                                     >
                                         {ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
                                     </select>
@@ -391,8 +394,9 @@ export default function AdminPage() {
                                         className={`btn ${adminUser.suspended ? 'btn-primary' : 'btn-outline'}`}
                                         onClick={() => updateSuspension(adminUser, !adminUser.suspended)}
                                         disabled={busyId === adminUser.id || adminUser.id === user.id}
+                                        title={adminUser.id === user.id ? 'You cannot suspend your own account' : undefined}
                                     >
-                                        {adminUser.suspended ? 'Unsuspend' : 'Suspend'}
+                                        {adminUser.id === user.id ? 'Protected' : adminUser.suspended ? 'Unsuspend' : 'Suspend'}
                                     </button>
                                 </div>
                             </div>
