@@ -1,33 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { createSessionToken } from '@/lib/session';
+import { buildSessionUser, createLoginResponse } from '@/lib/authResponse';
 import { decryptTwoFactorSecret, verifyAndConsumeRecoveryCode, verifyTotpCode } from '@/lib/twoFactor';
-
-function buildSessionUser(user: { id: string; email: string; name: string; role: string; avatar: string | null }) {
-    return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        avatar: user.avatar,
-    };
-}
-
-function createLoginResponse(sessionUser: ReturnType<typeof buildSessionUser>) {
-    const token = createSessionToken(sessionUser);
-    const response = NextResponse.json({ success: true, data: sessionUser, token });
-
-    response.cookies.set('session', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7,
-        path: '/',
-    });
-
-    return response;
-}
 
 export async function POST(req: NextRequest) {
     try {
@@ -50,6 +25,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Compare passwords
+        if (!user.password) {
+            return NextResponse.json(
+                { success: false, error: 'Use Google to sign in to this account' },
+                { status: 401 }
+            );
+        }
+
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
             return NextResponse.json(

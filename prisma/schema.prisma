@@ -14,7 +14,7 @@ datasource db {
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
-  password      String
+  password      String?
   name          String
   role          String    @default("PLAYER") // ADMIN, COACH, PARENT, PLAYER
   avatar        String?
@@ -40,10 +40,26 @@ model User {
   payments       Payment[]
   notifications  Notification[]
   stats          PlayerStat[]
+  authAccounts   AuthAccount[]
   receivedFeedback PlayerFeedback[] @relation("ReceivedFeedback")
   givenFeedback    PlayerFeedback[] @relation("GivenFeedback")
   children       FamilyLink[]    @relation("ParentLinks")
   parents        FamilyLink[]    @relation("ChildLinks")
+}
+
+model AuthAccount {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  email             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 // ============================================

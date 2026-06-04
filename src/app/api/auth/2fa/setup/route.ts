@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
         if (user.twoFactorEnabled) {
             return NextResponse.json({ success: false, error: 'Two-factor authentication is already enabled' }, { status: 400 });
         }
+        if (!user.password) {
+            return NextResponse.json({ success: false, error: 'Set a password before enabling two-factor authentication' }, { status: 400 });
+        }
 
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {

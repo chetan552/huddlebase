@@ -155,6 +155,22 @@ export default function RegisterPage() {
                                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
                                     Continue →
                                 </button>
+
+                                <div className="auth-divider">
+                                    <span>or continue with</span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    className="btn btn-google btn-lg"
+                                    onClick={() => {
+                                        setError('');
+                                        setStep(2);
+                                    }}
+                                >
+                                    <span className="google-mark">G</span>
+                                    Continue with Google
+                                </button>
                             </>
                         )}
 
@@ -193,6 +209,22 @@ export default function RegisterPage() {
                                         {loading ? 'Creating Account...' : 'Create Account'}
                                     </button>
                                 </div>
+
+                                <div className="auth-divider">
+                                    <span>or continue with</span>
+                                </div>
+
+                                <Link
+                                    href={`/api/auth/google/start?role=${encodeURIComponent(role || 'PLAYER')}`}
+                                    className={`btn btn-google btn-lg ${!role ? 'btn-disabled' : ''}`}
+                                    aria-disabled={!role}
+                                    onClick={(event) => {
+                                        if (!role) event.preventDefault();
+                                    }}
+                                >
+                                    <span className="google-mark">G</span>
+                                    Sign up with Google
+                                </Link>
                             </>
                         )}
                     </form>

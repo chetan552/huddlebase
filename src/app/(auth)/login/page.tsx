@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
@@ -15,6 +15,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get('error');
+    if (!oauthError) return;
+
+    const messages: Record<string, string> = {
+      google_not_configured: 'Google sign-in is not configured yet.',
+      google_cancelled: 'Google sign-in was cancelled.',
+      google_invalid_state: 'Google sign-in expired. Please try again.',
+      google_unverified_email: 'Google account email must be verified.',
+      google_two_factor_enabled: 'Use email and password for accounts with two-factor authentication enabled.',
+      google_login_failed: 'Google sign-in failed. Please try again.',
+    };
+
+    queueMicrotask(() => {
+      setError(messages[oauthError] || 'Google sign-in failed. Please try again.');
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +135,15 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          <div className="auth-divider">
+            <span>or continue with</span>
+          </div>
+
+          <Link href="/api/auth/google/start" className="btn btn-google btn-lg">
+            <span className="google-mark">G</span>
+            Sign in with Google
+          </Link>
 
           {showDemoLogin && (
             <>
