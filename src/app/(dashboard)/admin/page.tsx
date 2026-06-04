@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Users, UserCog, Trophy, CalendarDays, Receipt, Trash2, RefreshCw } from 'lucide-react';
+import { ShieldCheck, Users, UserCog, Trophy, CalendarDays, Receipt, Trash2, RefreshCw, History } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 type AdminUser = {
@@ -11,6 +11,7 @@ type AdminUser = {
     email: string;
     role: string;
     coachApproved: boolean;
+    suspended: boolean;
     avatar: string | null;
     createdAt: string;
     teamCount: number;
@@ -30,6 +31,17 @@ type AdminTeam = {
     staff: Array<{ id: string; name: string; email: string; role: string }>;
 };
 
+type AuditLog = {
+    id: string;
+    actorEmail: string;
+    action: string;
+    targetType: string;
+    targetId: string;
+    targetLabel: string | null;
+    metadata: string | null;
+    createdAt: string;
+};
+
 type AdminData = {
     stats: {
         users: number;
@@ -40,6 +52,7 @@ type AdminData = {
     };
     users: AdminUser[];
     teams: AdminTeam[];
+    auditLogs: AuditLog[];
 };
 
 const ROLES = ['ADMIN', 'COACH', 'PARENT', 'PLAYER'];
@@ -54,7 +67,7 @@ export default function AdminPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
     const [data, setData] = useState<AdminData | null>(null);
-    const [activeTab, setActiveTab] = useState<'users' | 'teams'>('users');
+    const [activeTab, setActiveTab] = useState<'coachRequests' | 'users' | 'teams' | 'audit'>('coachRequests');
     const [query, setQuery] = useState('');
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
@@ -124,6 +137,7 @@ export default function AdminPage() {
                 body: JSON.stringify({
                     role,
                     coachApproved: role === 'COACH' ? targetUser.coachApproved : role === 'ADMIN',
+                    suspended: targetUser.suspended,
                 }),
             });
             const json = await res.json();
@@ -160,7 +174,7 @@ export default function AdminPage() {
             const res = await fetch(`/api/admin/users/${targetUser.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: 'COACH', coachApproved }),
+                body: JSON.stringify({ role: 'COACH', coachApproved, suspended: targetUser.suspended }),
             });
             const json = await res.json();
             if (!json.success) {
@@ -173,6 +187,61 @@ export default function AdminPage() {
                 users: current.users.map((adminUser) => adminUser.id === targetUser.id ? json.data : adminUser),
             } : current);
             setMessage(`${targetUser.name}'s coach access was ${coachApproved ? 'approved' : 'revoked'}.`);
+        } catch {
+            setError('Connection error. Please try again.');
+        } finally {
+            setBusyId('');
+        }
+    };
+
+    const updateSuspension = async (targetUser: AdminUser, suspended: boolean) => {
+        setBusyId(targetUser.id);
+        setError('');
+        setMessage('');
+        try {
+            const res = await fetch(`/api/admin/users/${targetUser.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: targetUser.role, coachApproved: targetUser.coachApproved, suspended }),
+            });
+            const json = await res.json();
+            if (!json.success) {
+                setError(json.error || 'Could not update suspension.');
+                return;
+            }
+
+            setData((current) => current ? {
+                ...current,
+                users: current.users.map((adminUser) => adminUser.id === targetUser.id ? json.data : adminUser),
+            } : current);
+            setMessage(`${targetUser.name} was ${suspended ? 'suspended' : 'unsuspended'}.`);
+        } catch {
+            setError('Connection error. Please try again.');
+        } finally {
+            setBusyId('');
+        }
+    };
+
+    const transferTeamLead = async (team: AdminTeam, userId: string) => {
+        if (!userId) return;
+
+        setBusyId(team.id);
+        setError('');
+        setMessage('');
+        try {
+            const res = await fetch(`/api/admin/teams/${team.id}/transfer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId }),
+            });
+            const json = await res.json();
+            if (!json.success) {
+                setError(json.error || 'Could not transfer team lead.');
+                return;
+            }
+
+            setMessage(`${team.name} lead coach was transferred.`);
+            await loadAdminData();
         } catch {
             setError('Connection error. Please try again.');
         } finally {
@@ -238,6 +307,13 @@ export default function AdminPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <button
+                            className={`btn ${activeTab === 'coachRequests' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => setActiveTab('coachRequests')}
+                        >
+                            <ShieldCheck size={16} />
+                            Coach Requests
+                        </button>
+                        <button
                             className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => setActiveTab('users')}
                         >
@@ -251,17 +327,33 @@ export default function AdminPage() {
                             <ShieldCheck size={16} />
                             Teams
                         </button>
+                        <button
+                            className={`btn ${activeTab === 'audit' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => setActiveTab('audit')}
+                        >
+                            <History size={16} />
+                            Audit
+                        </button>
                     </div>
                     <input
                         className="form-input"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={activeTab === 'users' ? 'Search users...' : 'Search teams...'}
+                        placeholder={activeTab === 'teams' ? 'Search teams...' : activeTab === 'audit' ? 'Search audit...' : 'Search users...'}
                         style={{ maxWidth: 320 }}
                     />
                 </div>
 
-                {activeTab === 'users' ? (
+                {activeTab === 'coachRequests' ? (
+                    <UserList
+                        users={filteredUsers.filter((adminUser) => adminUser.role === 'COACH' && !adminUser.coachApproved)}
+                        currentUserId={user.id}
+                        busyId={busyId}
+                        onRoleChange={updateUserRole}
+                        onCoachApproval={updateCoachApproval}
+                        onSuspension={updateSuspension}
+                    />
+                ) : activeTab === 'users' ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {filteredUsers.map((adminUser) => (
                             <div key={adminUser.id} className="glass-subtle" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'center' }}>
@@ -272,9 +364,7 @@ export default function AdminPage() {
                                         {adminUser.teamCount} team{adminUser.teamCount === 1 ? '' : 's'} · {adminUser.authProviderCount > 0 ? 'OAuth linked' : 'Password account'}
                                     </div>
                                 </div>
-                                <span className={`badge ${ROLE_BADGE[adminUser.role] || 'badge-neutral'}`} style={{ justifySelf: 'start' }}>
-                                    {adminUser.role === 'COACH' && !adminUser.coachApproved ? 'COACH PENDING' : adminUser.role}
-                                </span>
+                                <UserStatus user={adminUser} />
                                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     <select
                                         className="form-input form-select"
@@ -296,12 +386,20 @@ export default function AdminPage() {
                                             {adminUser.coachApproved ? 'Revoke' : 'Approve'}
                                         </button>
                                     )}
+                                    <button
+                                        type="button"
+                                        className={`btn ${adminUser.suspended ? 'btn-primary' : 'btn-outline'}`}
+                                        onClick={() => updateSuspension(adminUser, !adminUser.suspended)}
+                                        disabled={busyId === adminUser.id || adminUser.id === user.id}
+                                    >
+                                        {adminUser.suspended ? 'Unsuspend' : 'Suspend'}
+                                    </button>
                                 </div>
                             </div>
                         ))}
                         {filteredUsers.length === 0 && <EmptyState label="No users match your search." />}
                     </div>
-                ) : (
+                ) : activeTab === 'teams' ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {filteredTeams.map((team) => (
                             <div key={team.id} className="glass-subtle" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', alignItems: 'center' }}>
@@ -329,12 +427,132 @@ export default function AdminPage() {
                                     <Trash2 size={16} />
                                     {busyId === team.id ? 'Deleting...' : 'Delete'}
                                 </button>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <select
+                                        className="form-input form-select"
+                                        defaultValue=""
+                                        onChange={(event) => {
+                                            if (!event.target.value) return;
+                                            transferTeamLead(team, event.target.value);
+                                            event.target.value = '';
+                                        }}
+                                        disabled={busyId === team.id}
+                                    >
+                                        <option value="">Transfer lead coach...</option>
+                                        {data?.users
+                                            .filter((adminUser) => !adminUser.suspended)
+                                            .map((adminUser) => (
+                                                <option key={adminUser.id} value={adminUser.id}>
+                                                    {adminUser.name} ({adminUser.email})
+                                                </option>
+                                            ))}
+                                    </select>
+                                </div>
                             </div>
                         ))}
                         {filteredTeams.length === 0 && <EmptyState label="No teams match your search." />}
                     </div>
+                ) : (
+                    <AuditList logs={data?.auditLogs || []} query={query} />
                 )}
             </div>
+        </div>
+    );
+}
+
+function UserStatus({ user }: { user: AdminUser }) {
+    if (user.suspended) {
+        return <span className="badge badge-danger" style={{ justifySelf: 'start' }}>SUSPENDED</span>;
+    }
+
+    return (
+        <span className={`badge ${ROLE_BADGE[user.role] || 'badge-neutral'}`} style={{ justifySelf: 'start' }}>
+            {user.role === 'COACH' && !user.coachApproved ? 'COACH PENDING' : user.role}
+        </span>
+    );
+}
+
+function UserList({
+    users,
+    currentUserId,
+    busyId,
+    onRoleChange,
+    onCoachApproval,
+    onSuspension,
+}: {
+    users: AdminUser[];
+    currentUserId: string;
+    busyId: string;
+    onRoleChange: (user: AdminUser, role: string) => void;
+    onCoachApproval: (user: AdminUser, approved: boolean) => void;
+    onSuspension: (user: AdminUser, suspended: boolean) => void;
+}) {
+    if (users.length === 0) return <EmptyState label="No pending coach requests." />;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {users.map((adminUser) => (
+                <div key={adminUser.id} className="glass-subtle" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700 }}>{adminUser.name}</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{adminUser.email}</div>
+                        <div style={{ color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: '0.25rem' }}>
+                            Requested {new Date(adminUser.createdAt).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <UserStatus user={adminUser} />
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button className="btn btn-primary" onClick={() => onCoachApproval(adminUser, true)} disabled={busyId === adminUser.id}>
+                            Approve
+                        </button>
+                        <button className="btn btn-outline" onClick={() => onRoleChange(adminUser, 'PLAYER')} disabled={busyId === adminUser.id}>
+                            Reject
+                        </button>
+                        <button
+                            className="btn btn-outline"
+                            onClick={() => onSuspension(adminUser, !adminUser.suspended)}
+                            disabled={busyId === adminUser.id || adminUser.id === currentUserId}
+                        >
+                            {adminUser.suspended ? 'Unsuspend' : 'Suspend'}
+                        </button>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function AuditList({ logs, query }: { logs: AuditLog[]; query: string }) {
+    const term = query.trim().toLowerCase();
+    const filtered = term
+        ? logs.filter((log) =>
+            log.actorEmail.toLowerCase().includes(term) ||
+            log.action.toLowerCase().includes(term) ||
+            log.targetType.toLowerCase().includes(term) ||
+            (log.targetLabel || '').toLowerCase().includes(term)
+        )
+        : logs;
+
+    if (filtered.length === 0) return <EmptyState label="No audit entries match your search." />;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {filtered.map((log) => (
+                <div key={log.id} className="glass-subtle" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) minmax(180px, 0.8fr) minmax(180px, 0.8fr)', gap: '1rem' }}>
+                    <div>
+                        <div style={{ fontWeight: 700 }}>{log.action}</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                            {log.targetType}: {log.targetLabel || log.targetId}
+                        </div>
+                    </div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        {log.actorEmail}
+                    </div>
+                    <div style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
+                        {new Date(log.createdAt).toLocaleString()}
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }

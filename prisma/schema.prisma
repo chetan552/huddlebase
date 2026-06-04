@@ -18,6 +18,7 @@ model User {
   name          String
   role          String    @default("PLAYER") // ADMIN, COACH, PARENT, PLAYER
   coachApproved Boolean   @default(false)
+  suspended     Boolean   @default(false)
   avatar        String?
   phone         String?
   twoFactorEnabled Boolean @default(false)
@@ -46,6 +47,22 @@ model User {
   givenFeedback    PlayerFeedback[] @relation("GivenFeedback")
   children       FamilyLink[]    @relation("ParentLinks")
   parents        FamilyLink[]    @relation("ChildLinks")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String
+  actorEmail  String
+  action      String
+  targetType  String
+  targetId    String
+  targetLabel String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([targetType, targetId])
 }
 
 model AuthAccount {

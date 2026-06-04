@@ -7,6 +7,7 @@ export interface SessionUser {
     name: string;
     role: string;
     coachApproved: boolean;
+    suspended?: boolean;
     avatar?: string | null;
 }
 
@@ -48,6 +49,7 @@ export function createSessionToken(user: SessionUser): string {
         name: user.name,
         role: user.role,
         coachApproved: user.coachApproved,
+        suspended: user.suspended ?? false,
         avatar: user.avatar ?? null,
         iat: now,
         exp: now + SESSION_TTL_SECONDS,
@@ -71,6 +73,7 @@ export function verifySessionToken(token: string): SessionUser | null {
         const parsed = JSON.parse(base64UrlDecode(payload)) as SessionPayload;
         if (!parsed.id || !parsed.email || !parsed.name || !parsed.role) return null;
         if (!parsed.exp || parsed.exp < Math.floor(Date.now() / 1000)) return null;
+        if (parsed.suspended) return null;
         return { ...parsed, coachApproved: parsed.coachApproved ?? false };
     } catch {
         return null;

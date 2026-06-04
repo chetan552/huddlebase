@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { isApprovedCoachOrAdmin } from '@/lib/permissions';
+import { writeAuditLog } from '@/lib/audit';
 
 export async function DELETE(
     req: NextRequest,
@@ -31,9 +32,19 @@ export async function DELETE(
             return NextResponse.json({ success: false, error: 'You do not have permission to delete this team.' }, { status: 403 });
         }
 
-        await prisma.team.delete({
+        const deleted = await prisma.team.delete({
             where: { id: teamId }
         });
+
+        if (user.role === 'ADMIN') {
+            await writeAuditLog({
+                actor: user,
+                action: 'admin.team.delete',
+                targetType: 'Team',
+                targetId: deleted.id,
+                targetLabel: deleted.name,
+            });
+        }
 
         return NextResponse.json({ success: true, message: 'Team deleted successfully' });
     } catch (error: any) {

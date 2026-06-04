@@ -17,12 +17,12 @@ export async function GET(req: NextRequest) {
         // Fetch latest user data from DB to reflect avatar and profile updates
         const user = await prisma.user.findUnique({
             where: { id: sessionUser.id },
-            select: { id: true, email: true, name: true, role: true, coachApproved: true, avatar: true },
+            select: { id: true, email: true, name: true, role: true, coachApproved: true, suspended: true, avatar: true },
         });
 
-        if (!user) {
+        if (!user || user.suspended) {
             return NextResponse.json(
-                { success: false, error: 'User not found' },
+                { success: false, error: user?.suspended ? 'Account suspended' : 'User not found' },
                 { status: 401 }
             );
         }

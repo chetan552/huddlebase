@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
         }
 
-        const [users, teams, eventsCount, invoicesCount] = await Promise.all([
+        const [users, teams, auditLogs, eventsCount, invoicesCount] = await Promise.all([
             prisma.user.findMany({
                 select: {
                     id: true,
@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
                     email: true,
                     role: true,
                     coachApproved: true,
+                    suspended: true,
                     avatar: true,
                     createdAt: true,
                     _count: {
@@ -57,6 +58,10 @@ export async function GET(req: NextRequest) {
                 },
                 orderBy: { createdAt: 'desc' },
             }),
+            prisma.auditLog.findMany({
+                orderBy: { createdAt: 'desc' },
+                take: 50,
+            }),
             prisma.event.count(),
             prisma.invoice.count(),
         ]);
@@ -82,6 +87,7 @@ export async function GET(req: NextRequest) {
                     email: adminUser.email,
                     role: adminUser.role,
                     coachApproved: adminUser.coachApproved,
+                    suspended: adminUser.suspended,
                     avatar: adminUser.avatar,
                     createdAt: adminUser.createdAt.toISOString(),
                     teamCount: adminUser._count.teamMembers,
@@ -103,6 +109,16 @@ export async function GET(req: NextRequest) {
                         name: member.user.name,
                         email: member.user.email,
                     })),
+                })),
+                auditLogs: auditLogs.map((log) => ({
+                    id: log.id,
+                    actorEmail: log.actorEmail,
+                    action: log.action,
+                    targetType: log.targetType,
+                    targetId: log.targetId,
+                    targetLabel: log.targetLabel,
+                    metadata: log.metadata,
+                    createdAt: log.createdAt.toISOString(),
                 })),
             },
         });

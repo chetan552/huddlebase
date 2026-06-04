@@ -28,6 +28,7 @@ export default function LoginPage() {
       google_unverified_email: 'Google account email must be verified.',
       google_two_factor_enabled: 'Use email and password for accounts with two-factor authentication enabled.',
       google_signup_required: 'Create an account first so you can choose your role.',
+      account_suspended: 'This account has been suspended.',
       google_login_failed: 'Google sign-in failed. Please try again.',
     };
 

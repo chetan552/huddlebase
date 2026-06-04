@@ -18,6 +18,14 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Name is required' }, { status: 400 });
         }
 
+        const existingUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { suspended: true },
+        });
+        if (!existingUser || existingUser.suspended) {
+            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        }
+
         const updated = await prisma.user.update({
             where: { id: user.id },
             data: {
@@ -25,7 +33,7 @@ export async function PATCH(req: NextRequest) {
                 ...(avatar !== undefined ? { avatar } : {}),
                 ...(phone !== undefined ? { phone } : {}),
             },
-            select: { id: true, name: true, email: true, role: true, coachApproved: true, avatar: true, phone: true },
+            select: { id: true, name: true, email: true, role: true, coachApproved: true, suspended: true, avatar: true, phone: true },
         });
 
         const response = NextResponse.json({ success: true, data: updated });

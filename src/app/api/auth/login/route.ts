@@ -23,6 +23,12 @@ export async function POST(req: NextRequest) {
                 { status: 401 }
             );
         }
+        if (user.suspended) {
+            return NextResponse.json(
+                { success: false, error: 'This account has been suspended' },
+                { status: 403 }
+            );
+        }
 
         // Compare passwords
         if (!user.password) {

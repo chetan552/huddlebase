@@ -7,6 +7,7 @@ export function buildSessionUser(user: {
     name: string;
     role: string;
     coachApproved?: boolean | null;
+    suspended?: boolean | null;
     avatar: string | null;
 }): SessionUser {
     return {
@@ -15,6 +16,7 @@ export function buildSessionUser(user: {
         name: user.name,
         role: user.role,
         coachApproved: Boolean(user.coachApproved),
+        suspended: Boolean(user.suspended),
         avatar: user.avatar,
     };
 }

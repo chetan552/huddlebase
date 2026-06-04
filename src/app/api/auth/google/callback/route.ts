@@ -47,11 +47,13 @@ export async function GET(req: NextRequest) {
             });
 
             if (account) {
+                if (account.user.suspended) throw new Error('GOOGLE_ACCOUNT_SUSPENDED');
                 if (account.user.twoFactorEnabled) throw new Error(TWO_FACTOR_GOOGLE_ERROR);
                 return account.user;
             }
 
             const existingUser = await tx.user.findUnique({ where: { email } });
+            if (existingUser?.suspended) throw new Error('GOOGLE_ACCOUNT_SUSPENDED');
             if (existingUser?.twoFactorEnabled) throw new Error(TWO_FACTOR_GOOGLE_ERROR);
             if (!existingUser && state.flow !== 'signup') throw new Error(GOOGLE_SIGNUP_REQUIRED_ERROR);
 
@@ -86,6 +88,9 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         if (error instanceof Error && error.message === TWO_FACTOR_GOOGLE_ERROR) {
             return redirectWithError(req, 'google_two_factor_enabled');
+        }
+        if (error instanceof Error && error.message === 'GOOGLE_ACCOUNT_SUSPENDED') {
+            return redirectWithError(req, 'account_suspended');
         }
         if (error instanceof Error && error.message === GOOGLE_SIGNUP_REQUIRED_ERROR) {
             const response = NextResponse.redirect(new URL('/register?error=google_signup_required', req.url));
