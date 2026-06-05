@@ -2457,6 +2457,25 @@ a.sidebar__link--active,
 .feature-card__title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
 .feature-card__desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
 
+.feature-card__badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 2rem;
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary-400);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.feature-card__badge--highlight {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
 /* Stats */
 .stats-section { padding: 3rem 0; }
 
@@ -2483,18 +2502,411 @@ a.sidebar__link--active,
   margin-top: 0.25rem;
 }
 
+/* Workflow */
+.workflow-section {
+  padding: 4rem 0 4.5rem;
+}
+
+.workflow-shell {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1.22fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+}
+
+.workflow-copy .section-title {
+  max-width: 520px;
+}
+
+.workflow-copy__text {
+  margin: 0;
+}
+
+.workflow-track {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  position: relative;
+}
+
+.workflow-track::before {
+  content: "";
+  position: absolute;
+  top: 2rem;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), rgba(20, 184, 166, 0.38), transparent);
+}
+
+.workflow-step {
+  position: relative;
+  min-height: 215px;
+  padding: 1rem;
+  border-radius: 0.85rem;
+  background: rgba(13, 20, 36, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  box-shadow: var(--shadow-glass);
+}
+
+.workflow-step__number {
+  color: var(--text-tertiary);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.75rem;
+}
+
+.workflow-step__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.7rem;
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--primary-300);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  margin-bottom: 1rem;
+}
+
+.workflow-step h3 {
+  font-size: 0.98rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.workflow-step p {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+/* AI Spotlight */
+.ai-spotlight-section {
+  padding: 4rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-spotlight-section__glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ai-spotlight-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.ai-spotlight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 2rem;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.ai-spotlight-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 1.25rem;
+}
+
+.ai-spotlight-title span {
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ai-spotlight-copy {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.ai-spotlight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.ai-spotlight-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.ai-spotlight-list__item svg {
+  color: #a855f7;
+  flex-shrink: 0;
+}
+
+.practice-plan-card {
+  background: var(--surface-800);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  box-shadow: 0 0 60px rgba(139, 92, 246, 0.12);
+}
+
+.practice-plan-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.practice-plan-card__header svg {
+  color: #a855f7;
+}
+
+.practice-plan-card__header span {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.practice-plan-card__block {
+  margin-bottom: 1rem;
+}
+
+.practice-plan-card__section {
+  color: #a855f7;
+  font-weight: 700;
+  font-size: 0.82rem;
+  margin-bottom: 0.35rem;
+}
+
+.practice-plan-card__line {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding-left: 0.5rem;
+}
+
+.practice-plan-card__line strong {
+  color: var(--text-primary);
+}
+
+.practice-plan-card__status {
+  margin-top: 1rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.15);
+  font-size: 0.75rem;
+  color: #c084fc;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.practice-plan-card__status span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a855f7;
+  animation: pulse 2s infinite;
+}
+
 /* CTA */
 .cta-section { padding: 4rem 0 6rem; }
 
 .cta-card {
+  position: relative;
+  overflow: hidden;
   text-align: center;
   padding: 4rem 2rem;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(20, 184, 166, 0.1));
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+.cta-card__glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% 100%, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.cta-card__content {
+  position: relative;
+}
+
+.cta-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 2rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: var(--primary-400);
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
 .cta-card__title { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; }
 .cta-card__desc { color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.05rem; }
+
+.cta-card__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Steps */
+.steps-section {
+  padding: 4.5rem 0;
+  background: var(--surface-800);
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+  position: relative;
+}
+
+.step-card-wrap {
+  position: relative;
+}
+
+.step-connector {
+  display: none;
+}
+
+.step-card {
+  background: var(--surface-700);
+  border: 1px solid var(--surface-600);
+  border-radius: 1rem;
+  padding: 2rem;
+  height: 100%;
+}
+
+.step-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-400));
+  margin-bottom: 1.25rem;
+  color: white;
+}
+
+.step-card__number {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--primary-400);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.step-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.step-card p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+/* Sports */
+.sports-section {
+  padding: 4rem 0;
+}
+
+.section-header--compact {
+  margin-bottom: 2.5rem;
+}
+
+.sports-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: center;
+}
+
+.sports-chip {
+  padding: 0.5rem 1.1rem;
+  border-radius: 2rem;
+  background: var(--surface-800);
+  border: 1px solid var(--surface-600);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.sports-chip--more {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: var(--primary-400);
+  font-weight: 600;
+}
+
+/* Highlights */
+.highlights-section {
+  padding: 3.5rem 0;
+  background: var(--surface-800);
+  border-top: 1px solid var(--surface-700);
+  border-bottom: 1px solid var(--surface-700);
+}
+
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+}
+
+.highlight-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.highlight-item__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.highlight-item__title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+
+.highlight-item__desc {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
 
 /* Landing footer */
 .landing-footer { border-top: 1px solid var(--surface-700); padding: 2rem 0; }
@@ -2506,6 +2918,14 @@ a.sidebar__link--active,
 }
 
 .landing-footer__copy { font-size: 0.8rem; color: var(--text-tertiary); }
+
+.landing-footer__links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
 .landing-footer__link {
   color: var(--text-secondary);
@@ -2650,6 +3070,34 @@ a.sidebar__link--active,
   .features-section {
     padding: 3.5rem 0;
   }
+  .workflow-shell,
+  .ai-spotlight-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  .workflow-copy {
+    text-align: center;
+  }
+  .workflow-copy .section-title,
+  .workflow-copy__text {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .workflow-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .workflow-track::before {
+    display: none;
+  }
+  .ai-spotlight-title {
+    font-size: 2rem;
+  }
+  .steps-section,
+  .workflow-section,
+  .ai-spotlight-section,
+  .sports-section {
+    padding: 3.5rem 0;
+  }
   .landing-footer__inner {
     flex-direction: column;
     gap: 1rem;
@@ -2689,6 +3137,24 @@ a.sidebar__link--active,
   .hero-preview__row {
     grid-template-columns: 1fr;
     gap: 0.35rem;
+  }
+  .workflow-track {
+    grid-template-columns: 1fr;
+  }
+  .workflow-step {
+    min-height: auto;
+  }
+  .practice-plan-card {
+    padding: 1.25rem;
+  }
+  .cta-section {
+    padding: 3rem 0 4rem;
+  }
+  .cta-card {
+    padding: 3rem 1.25rem;
+  }
+  .cta-card__actions .btn {
+    width: 100%;
   }
   .stats-section {
     padding: 2.5rem 0;

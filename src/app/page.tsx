@@ -103,6 +103,29 @@ const STATS = [
   { value: 'AI', label: 'Practice Planning' },
 ];
 
+const WORKFLOW = [
+  {
+    icon: <Upload size={18} />,
+    title: 'Import roster',
+    description: 'Bring players, parents, roles, jerseys, and positions in from one CSV.',
+  },
+  {
+    icon: <Calendar size={18} />,
+    title: 'Schedule the week',
+    description: 'Create practices, games, and meetings with RSVP tracking built in.',
+  },
+  {
+    icon: <Sparkles size={18} />,
+    title: 'Generate the plan',
+    description: 'Turn age group, sport, time, and skill focus into a ready-to-run session.',
+  },
+  {
+    icon: <CheckCircle2 size={18} />,
+    title: 'Track and export',
+    description: 'Record attendance, effort, payments, and export the reports you need.',
+  },
+];
+
 export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
 
@@ -127,6 +150,7 @@ export default function LandingPage() {
           </div>
           <div className="landing-nav__links">
             <a href="#features" className="landing-nav__link">Features</a>
+            <a href="#workflow" className="landing-nav__link">Workflow</a>
             <a href="#how-it-works" className="landing-nav__link">How It Works</a>
             <a href="#sports" className="landing-nav__link">Sports</a>
             <Link href="/login" className="btn btn-outline btn-sm">Log In</Link>
@@ -255,38 +279,51 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* AI Spotlight */}
-      <section style={{ padding: '4rem 0', position: 'relative', overflow: 'hidden' }}>
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(139,92,246,0.12) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
+      {/* Workflow */}
+      <section id="workflow" className="workflow-section">
         <div className="container">
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center',
-          }} className="ai-spotlight-grid">
+          <div className="workflow-shell">
+            <div className="workflow-copy">
+              <span className="section-label">Coach Workflow</span>
+              <h2 className="section-title">From signup sheet to game day, without tool-hopping.</h2>
+              <p className="section-subtitle workflow-copy__text">
+                HuddleBase connects the weekly coaching loop, so roster updates, schedules,
+                communication, practice planning, and reporting stay in one place.
+              </p>
+            </div>
+            <div className="workflow-track">
+              {WORKFLOW.map((step, i) => (
+                <div key={step.title} className="workflow-step">
+                  <div className="workflow-step__number">{String(i + 1).padStart(2, '0')}</div>
+                  <div className="workflow-step__icon">{step.icon}</div>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Spotlight */}
+      <section className="ai-spotlight-section">
+        <div className="ai-spotlight-section__glow" />
+        <div className="container">
+          <div className="ai-spotlight-grid">
             <div>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                padding: '0.35rem 0.9rem', borderRadius: '2rem',
-                background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)',
-                color: '#c084fc', fontSize: '0.78rem', fontWeight: 600, marginBottom: '1.5rem',
-              }}>
+              <span className="ai-spotlight-badge">
                 <Sparkles size={12} /> AI Coach Assistant
               </span>
-              <h2 style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1.2, marginBottom: '1.25rem' }}>
+              <h2 className="ai-spotlight-title">
                 Practice plans in seconds,<br />
-                <span style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                  not hours.
-                </span>
+                <span>not hours.</span>
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '2rem' }}>
+              <p className="ai-spotlight-copy">
                 Tell our AI your sport, age group, session length, and skill focus. Get back a
                 complete practice plan with warm-ups, drills, progressions, scrimmage rules, and
                 coaching cues — tailored to your team, ready to run.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
+              <div className="ai-spotlight-list">
                 {[
                   'Warm-up activities with timing',
                   'Skill drills with step-by-step setup',
@@ -294,50 +331,41 @@ export default function LandingPage() {
                   'Scrimmage with rule modifications',
                   'Cool-down and reflection questions',
                 ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    <CheckCircle2 size={16} style={{ color: '#a855f7', flexShrink: 0 }} />
+                  <div key={i} className="ai-spotlight-list__item">
+                    <CheckCircle2 size={16} />
                     {item}
                   </div>
                 ))}
               </div>
-              <Link href="/register" className="btn btn-primary" style={{ gap: '0.5rem' }}>
+              <Link href="/register" className="btn btn-primary">
                 <Sparkles size={15} /> Try AI Practice Plans Free
               </Link>
             </div>
 
             {/* Mock plan card */}
-            <div style={{
-              background: 'var(--surface-800)', border: '1px solid rgba(168,85,247,0.25)',
-              borderRadius: '1.25rem', padding: '1.75rem',
-              boxShadow: '0 0 60px rgba(139,92,246,0.12)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <Sparkles size={16} style={{ color: '#a855f7' }} />
-                <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Soccer Practice Plan — 60 min</span>
+            <div className="practice-plan-card">
+              <div className="practice-plan-card__header">
+                <Sparkles size={16} />
+                <span>Soccer Practice Plan — 60 min</span>
               </div>
               {[
                 { section: '## Overview', lines: ['Build confidence in tight spaces through possession-based drills and small-sided play.'] },
                 { section: '## Warm-Up (9 min)', lines: ['**Rondo Activation** (5 min): 4v2 in a 10×10 grid.', '**Dynamic Stretching** (4 min): Hip openers, leg swings, high knees.'] },
                 { section: '## Skill Development (27 min)', lines: ['**1v1 Box Challenge** (10 min): Develop dribbling under pressure.', '**Passing Under Pressure** (17 min): Triangle passing with a defender.'] },
               ].map((block, i) => (
-                <div key={i} style={{ marginBottom: '1rem' }}>
-                  <div style={{ color: '#a855f7', fontWeight: 700, fontSize: '0.82rem', marginBottom: '0.35rem' }}>{block.section}</div>
+                <div key={i} className="practice-plan-card__block">
+                  <div className="practice-plan-card__section">{block.section}</div>
                   {block.lines.map((line, j) => (
-                    <div key={j} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6, paddingLeft: '0.5rem' }}>
+                    <div key={j} className="practice-plan-card__line">
                       {line.startsWith('**') ? (
-                        <span>• <strong style={{ color: 'var(--text-primary)' }}>{line.match(/\*\*([^*]+)\*\*/)?.[1]}</strong>{line.replace(/\*\*[^*]+\*\*/, '')}</span>
+                        <span>• <strong>{line.match(/\*\*([^*]+)\*\*/)?.[1]}</strong>{line.replace(/\*\*[^*]+\*\*/, '')}</span>
                       ) : line}
                     </div>
                   ))}
                 </div>
               ))}
-              <div style={{
-                marginTop: '1rem', padding: '0.6rem 0.75rem', borderRadius: '0.5rem',
-                background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)',
-                fontSize: '0.75rem', color: '#c084fc',
-                display: 'flex', alignItems: 'center', gap: '0.4rem',
-              }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#a855f7', animation: 'pulse 2s infinite' }} />
+              <div className="practice-plan-card__status">
+                <span />
                 Generated in 8 seconds · Fully editable · Copy with one click
               </div>
             </div>
@@ -359,9 +387,9 @@ export default function LandingPage() {
             {FEATURES.map((feature, i) => (
               <div
                 key={i}
-                className="feature-card"
-                style={{
-                  animationDelay: `${i * 60}ms`,
+                  className="feature-card"
+                  style={{
+                    animationDelay: `${i * 60}ms`,
                   ...(feature.highlight ? {
                     borderColor: 'rgba(168,85,247,0.35)',
                     background: 'linear-gradient(135deg, var(--surface-800) 0%, rgba(139,92,246,0.06) 100%)',
@@ -371,13 +399,7 @@ export default function LandingPage() {
                 }}
               >
                 {feature.badge && (
-                  <span style={{
-                    position: 'absolute', top: '1rem', right: '1rem',
-                    fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: '2rem',
-                    background: feature.highlight ? 'rgba(168,85,247,0.2)' : 'rgba(59,130,246,0.15)',
-                    color: feature.highlight ? '#c084fc' : 'var(--primary-400)',
-                    border: `1px solid ${feature.highlight ? 'rgba(168,85,247,0.3)' : 'rgba(59,130,246,0.2)'}`,
-                  }}>
+                  <span className={`feature-card__badge${feature.highlight ? ' feature-card__badge--highlight' : ''}`}>
                     {feature.badge}
                   </span>
                 )}
@@ -393,7 +415,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" style={{ padding: '4.5rem 0', background: 'var(--surface-800)' }}>
+      <section id="how-it-works" className="steps-section">
         <div className="container">
           <div className="section-header">
             <span className="section-label">How It Works</span>
@@ -402,31 +424,21 @@ export default function LandingPage() {
               No complex setup. No IT team required. Just create, invite, and go.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '2rem', position: 'relative' }}>
+          <div className="steps-grid">
             {STEPS.map((step, i) => (
-              <div key={i} style={{ position: 'relative' }}>
+              <div key={i} className="step-card-wrap">
                 {i < STEPS.length - 1 && (
-                  <div style={{
-                    display: 'none',
-                  }} className="step-connector" />
+                  <div className="step-connector" />
                 )}
-                <div style={{
-                  background: 'var(--surface-700)', border: '1px solid var(--surface-600)',
-                  borderRadius: '1.25rem', padding: '2rem', height: '100%',
-                }}>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: 48, height: 48, borderRadius: '0.875rem',
-                    background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))',
-                    marginBottom: '1.25rem', color: 'white',
-                  }}>
+                <div className="step-card">
+                  <div className="step-card__icon">
                     {step.icon}
                   </div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-400)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
+                  <div className="step-card__number">
                     STEP {step.number}
                   </div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.75rem' }}>{step.title}</h3>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{step.description}</p>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
                 </div>
               </div>
             ))}
@@ -435,31 +447,22 @@ export default function LandingPage() {
       </section>
 
       {/* Sports */}
-      <section id="sports" style={{ padding: '4rem 0' }}>
+      <section id="sports" className="sports-section">
         <div className="container">
-          <div className="section-header" style={{ marginBottom: '2.5rem' }}>
+          <div className="section-header section-header--compact">
             <span className="section-label">Sports</span>
             <h2 className="section-title">Built for Every Sport</h2>
             <p className="section-subtitle">
               HuddleBase works for any team, any sport. The AI practice planner adapts its drills and structure to your specific game.
             </p>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem', justifyContent: 'center' }}>
+          <div className="sports-list">
             {SPORTS.map((sport, i) => (
-              <span key={i} style={{
-                padding: '0.5rem 1.1rem', borderRadius: '2rem',
-                background: 'var(--surface-800)', border: '1px solid var(--surface-600)',
-                fontSize: '0.875rem', color: 'var(--text-secondary)',
-                transition: 'all 0.2s',
-              }}>
+              <span key={i} className="sports-chip">
                 {sport}
               </span>
             ))}
-            <span style={{
-              padding: '0.5rem 1.1rem', borderRadius: '2rem',
-              background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
-              fontSize: '0.875rem', color: 'var(--primary-400)', fontWeight: 600,
-            }}>
+            <span className="sports-chip sports-chip--more">
               + more
             </span>
           </div>
@@ -467,26 +470,22 @@ export default function LandingPage() {
       </section>
 
       {/* Export / Import highlight strip */}
-      <section style={{ padding: '3.5rem 0', background: 'var(--surface-800)', borderTop: '1px solid var(--surface-700)', borderBottom: '1px solid var(--surface-700)' }}>
+      <section className="highlights-section">
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
+          <div className="highlights-grid">
             {[
               { icon: <Upload size={22} />, color: '#3b82f6', title: 'Bulk CSV Import', desc: 'Import your entire roster from a spreadsheet in one go. Maps name, email, role, jersey, position, and more.' },
               { icon: <Download size={22} />, color: '#22c55e', title: 'One-Click CSV Export', desc: 'Export roster, attendance, and financial data as CSV any time — for coaches, parents, or your club\'s records.' },
               { icon: <Star size={22} />, color: '#f59e0b', title: 'Effort Ratings', desc: 'Rate player effort after each session. Analytics track trends over time so you can reward improvement.' },
               { icon: <Shield size={22} />, color: '#8b5cf6', title: 'Role-Based Access', desc: 'Admins, coaches, players, and parents each see only what they need. No accidental data exposure.' },
             ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: '0.75rem', flexShrink: 0,
-                  background: `${item.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: item.color,
-                }}>
+              <div key={i} className="highlight-item">
+                <div className="highlight-item__icon" style={{ color: item.color, background: `${item.color}18` }}>
                   {item.icon}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.35rem' }}>{item.title}</div>
-                  <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{item.desc}</div>
+                  <div className="highlight-item__title">{item.title}</div>
+                  <div className="highlight-item__desc">{item.desc}</div>
                 </div>
               </div>
             ))}
@@ -497,19 +496,10 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="cta-section">
         <div className="container">
-          <div className="cta-card glass" style={{ position: 'relative', overflow: 'hidden' }}>
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(59,130,246,0.15) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
-            <div style={{ position: 'relative' }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                padding: '0.35rem 0.9rem', borderRadius: '2rem',
-                background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.25)',
-                color: 'var(--primary-400)', fontSize: '0.78rem', fontWeight: 600, marginBottom: '1.5rem',
-              }}>
+          <div className="cta-card glass">
+            <div className="cta-card__glow" />
+            <div className="cta-card__content">
+              <span className="cta-card__badge">
                 <Zap size={12} /> Free to get started
               </span>
               <h2 className="cta-card__title">Your team deserves better tools.</h2>
@@ -517,8 +507,8 @@ export default function LandingPage() {
                 Join coaches who replaced five apps with one. Get your roster, schedule,
                 payments, chat, and AI practice plans in a single dashboard — free.
               </p>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Link href="/register" className="btn btn-primary btn-lg" style={{ gap: '0.5rem' }}>
+              <div className="cta-card__actions">
+                <Link href="/register" className="btn btn-primary btn-lg">
                   Create Your Team Free <ArrowRight size={18} />
                 </Link>
                 <Link href="/login" className="btn btn-outline btn-lg">
@@ -541,16 +531,14 @@ export default function LandingPage() {
             <p className="landing-footer__copy">
               © 2026 HuddleBase. Built for coaches who hate admin work.
             </p>
-            <Link href="/privacy" className="landing-footer__link">Privacy Policy</Link>
+            <div className="landing-footer__links">
+              <a href="#features" className="landing-footer__link">Features</a>
+              <a href="#workflow" className="landing-footer__link">Workflow</a>
+              <Link href="/privacy" className="landing-footer__link">Privacy Policy</Link>
+            </div>
           </div>
         </div>
       </footer>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .ai-spotlight-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   );
 }
