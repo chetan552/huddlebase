@@ -142,62 +142,101 @@ export default function LandingPage() {
           <div className="hero__orb hero__orb--2" />
           <div className="hero__orb hero__orb--3" />
         </div>
-        <div className="hero__content">
-          <div className="hero__badge">
-            <span className="hero__badge-dot" />
-            Now with AI-powered practice planning
-          </div>
-          <h1 className="hero__title">
-            Run Your Team.<br />
-            <span className="hero__title-gradient">Not Your Spreadsheets.</span>
-          </h1>
-          <p className="hero__subtitle">
-            HuddleBase gives coaches, players, and parents one place for schedules,
-            attendance, payments, chat, analytics, and AI-generated practice plans.
-            Stop juggling apps. Start winning.
-          </p>
-          <div className="hero__actions">
-            <Link href="/register" className="btn btn-primary btn-lg" style={{ gap: '0.5rem' }}>
-              Start Free — No Credit Card
-              <ArrowRight size={18} />
-            </Link>
-            <Link href="/login" className="btn btn-outline btn-lg">
-              Sign In
-            </Link>
-          </div>
-          <div className="hero__social-proof">
-            <div className="hero__avatars">
-              {['#3b82f6', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6'].map((color, i) => (
-                <div
-                  key={i}
-                  className="hero__avatar"
-                  style={{ background: color, marginLeft: i > 0 ? '-8px' : 0, zIndex: 5 - i }}
-                />
+        <div className="hero__inner">
+          <div className="hero__content">
+            <div className="hero__badge">
+              <span className="hero__badge-dot" />
+              Now with AI-powered practice planning
+            </div>
+            <h1 className="hero__title">
+              Run Your Team.<br />
+              <span className="hero__title-gradient">Not Your Spreadsheets.</span>
+            </h1>
+            <p className="hero__subtitle">
+              HuddleBase gives coaches, players, and parents one place for schedules,
+              attendance, payments, chat, analytics, and AI-generated practice plans.
+            </p>
+            <div className="hero__actions">
+              <Link href="/register" className="btn btn-primary btn-lg">
+                Start Free — No Credit Card
+                <ArrowRight size={18} />
+              </Link>
+              <Link href="/login" className="btn btn-outline btn-lg">
+                Sign In
+              </Link>
+            </div>
+            <div className="hero__social-proof">
+              Built for <strong>coaches, parents, and players</strong> across 20+ sports
+            </div>
+
+            <div className="hero__quick-wins" aria-label="Key HuddleBase capabilities">
+              {[
+                { icon: <Sparkles size={13} />, text: 'AI Practice Plans' },
+                { icon: <Upload size={13} />, text: 'CSV Import' },
+                { icon: <Download size={13} />, text: 'CSV Export' },
+                { icon: <Shield size={13} />, text: 'Role-Based Access' },
+                { icon: <Clock size={13} />, text: 'Real-Time Chat' },
+              ].map((b, i) => (
+                <span key={i} className="hero__quick-win">
+                  {b.icon} {b.text}
+                </span>
               ))}
             </div>
-            <span className="hero__social-text">
-              Trusted by <strong>coaches and teams</strong> across 20+ sports
-            </span>
           </div>
 
-          {/* Quick-win badges */}
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '2rem' }}>
-            {[
-              { icon: <Sparkles size={13} />, text: 'AI Practice Plans' },
-              { icon: <Upload size={13} />, text: 'CSV Import' },
-              { icon: <Download size={13} />, text: 'CSV Export' },
-              { icon: <Shield size={13} />, text: 'Role-Based Access' },
-              { icon: <Clock size={13} />, text: 'Real-Time Chat' },
-            ].map((b, i) => (
-              <span key={i} style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                padding: '0.35rem 0.75rem', borderRadius: '2rem',
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                fontSize: '0.78rem', color: 'var(--text-secondary)',
-              }}>
-                {b.icon} {b.text}
-              </span>
-            ))}
+          <div className="hero-preview" aria-label="HuddleBase dashboard preview">
+            <div className="hero-preview__topbar">
+              <div>
+                <div className="hero-preview__eyebrow">Tonight&apos;s Game</div>
+                <div className="hero-preview__title">Falcons U14 vs. Rapids</div>
+              </div>
+              <span className="hero-preview__status">Live</span>
+            </div>
+
+            <div className="hero-preview__stats">
+              {[
+                { value: '18/22', label: 'Going' },
+                { value: '$1.2k', label: 'Collected' },
+                { value: '94%', label: 'Attendance' },
+              ].map((stat) => (
+                <div key={stat.label} className="hero-preview__stat">
+                  <span>{stat.value}</span>
+                  {stat.label}
+                </div>
+              ))}
+            </div>
+
+            <div className="hero-preview__panel">
+              <div className="hero-preview__panel-head">
+                <span>Practice Plan</span>
+                <Sparkles size={15} />
+              </div>
+              {[
+                { label: 'Warm-up', width: '44%' },
+                { label: 'Passing circuit', width: '72%' },
+                { label: 'Small-sided play', width: '58%' },
+              ].map((item) => (
+                <div key={item.label} className="hero-preview__row">
+                  <span>{item.label}</span>
+                  <div className="hero-preview__bar">
+                    <span style={{ width: item.width }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hero-preview__activity">
+              {[
+                { icon: <Calendar size={14} />, text: 'Practice added for Thursday' },
+                { icon: <MessageCircle size={14} />, text: 'Coach pinned a team update' },
+                { icon: <CheckCircle2 size={14} />, text: 'Attendance export ready' },
+              ].map((item) => (
+                <div key={item.text} className="hero-preview__activity-item">
+                  {item.icon}
+                  <span>{item.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -217,7 +256,7 @@ export default function LandingPage() {
       </section>
 
       {/* AI Spotlight */}
-      <section style={{ padding: '5rem 0', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '4rem 0', position: 'relative', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute', inset: 0,
           background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(139,92,246,0.12) 0%, transparent 70%)',
@@ -234,7 +273,7 @@ export default function LandingPage() {
                 background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)',
                 color: '#c084fc', fontSize: '0.78rem', fontWeight: 600, marginBottom: '1.5rem',
               }}>
-    
+                <Sparkles size={12} /> AI Coach Assistant
               </span>
               <h2 style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1.2, marginBottom: '1.25rem' }}>
                 Practice plans in seconds,<br />
@@ -354,7 +393,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" style={{ padding: '6rem 0', background: 'var(--surface-800)' }}>
+      <section id="how-it-works" style={{ padding: '4.5rem 0', background: 'var(--surface-800)' }}>
         <div className="container">
           <div className="section-header">
             <span className="section-label">How It Works</span>
@@ -396,7 +435,7 @@ export default function LandingPage() {
       </section>
 
       {/* Sports */}
-      <section id="sports" style={{ padding: '5rem 0' }}>
+      <section id="sports" style={{ padding: '4rem 0' }}>
         <div className="container">
           <div className="section-header" style={{ marginBottom: '2.5rem' }}>
             <span className="section-label">Sports</span>
@@ -428,7 +467,7 @@ export default function LandingPage() {
       </section>
 
       {/* Export / Import highlight strip */}
-      <section style={{ padding: '4rem 0', background: 'var(--surface-800)', borderTop: '1px solid var(--surface-700)', borderBottom: '1px solid var(--surface-700)' }}>
+      <section style={{ padding: '3.5rem 0', background: 'var(--surface-800)', borderTop: '1px solid var(--surface-700)', borderBottom: '1px solid var(--surface-700)' }}>
         <div className="container">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
             {[
@@ -508,7 +547,6 @@ export default function LandingPage() {
       </footer>
 
       <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         @media (max-width: 768px) {
           .ai-spotlight-grid { grid-template-columns: 1fr !important; }
         }
