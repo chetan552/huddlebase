@@ -1140,6 +1140,65 @@ button {
   gap: var(--space-6);
 }
 
+.admin-team-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.admin-team-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(180px, 1fr) minmax(150px, 0.7fr) minmax(220px, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4);
+}
+
+.admin-team-row > * {
+  min-width: 0;
+}
+
+.admin-team-details,
+.admin-team-staff {
+  min-width: 0;
+}
+
+.admin-team-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  font-weight: var(--font-weight-bold);
+}
+
+.admin-team-name span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-team-color {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+}
+
+.admin-team-staff > div:last-child {
+  overflow-wrap: anywhere;
+}
+
+.admin-team-delete,
+.admin-team-transfer,
+.admin-team-transfer .form-select {
+  width: 100%;
+}
+
+.admin-team-transfer .form-select {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .grid-calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1221,6 +1280,10 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .admin-team-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
   .grid-calendar {
     grid-template-columns: 1fr !important;
     gap: var(--space-3) !important;
@@ -1264,6 +1327,10 @@ button {
 
 @media (max-width: 640px) {
   .grid-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-team-row {
     grid-template-columns: 1fr;
   }
 }

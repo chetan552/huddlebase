@@ -542,13 +542,13 @@ export default function AdminPage() {
                         {filteredUsers.length === 0 && <EmptyState label="No users match your search." />}
                     </div>
                 ) : activeTab === 'teams' ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div className="admin-team-list">
                         {filteredTeams.map((team) => (
-                            <div key={team.id} className="glass-subtle" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', alignItems: 'center' }}>
-                                <div style={{ minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: team.color }} />
-                                        <span style={{ fontWeight: 700 }}>{team.name}</span>
+                            <div key={team.id} className="glass-subtle admin-team-row">
+                                <div className="admin-team-details">
+                                    <div className="admin-team-name">
+                                        <span className="admin-team-color" style={{ background: team.color }} />
+                                        <span>{team.name}</span>
                                     </div>
                                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
                                         {team.sport}{team.season ? ` · ${team.season}` : ''}
@@ -557,7 +557,7 @@ export default function AdminPage() {
                                         {team.memberCount} members · {team.eventCount} events · {team.invoiceCount} invoices
                                     </div>
                                 </div>
-                                <div style={{ minWidth: 0 }}>
+                                <div className="admin-team-staff">
                                     <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: '0.25rem' }}>Staff</div>
                                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                                         {team.staff.length > 0
@@ -565,11 +565,11 @@ export default function AdminPage() {
                                             : 'No staff assigned'}
                                     </div>
                                 </div>
-                                <button className="btn btn-danger" onClick={() => deleteTeam(team)} disabled={busyId === team.id}>
+                                <button className="btn btn-danger admin-team-delete" onClick={() => deleteTeam(team)} disabled={busyId === team.id}>
                                     <Trash2 size={16} />
                                     {busyId === team.id ? 'Deleting...' : 'Delete'}
                                 </button>
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <div className="admin-team-transfer">
                                     <select
                                         className="form-input form-select"
                                         defaultValue=""
