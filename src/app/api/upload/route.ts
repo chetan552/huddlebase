@@ -6,7 +6,12 @@ import { getSessionUser } from '@/lib/session';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
 const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MIME_TO_EXT: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+};
 
 export async function POST(req: NextRequest) {
     try {
@@ -22,7 +27,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
         }
 
-        if (!ALLOWED_TYPES.includes(file.type)) {
+        const ext = MIME_TO_EXT[file.type];
+        if (!ext) {
             return NextResponse.json({ success: false, error: 'Invalid file type. Use JPG, PNG, WebP, or GIF.' }, { status: 400 });
         }
 
@@ -33,8 +39,9 @@ export async function POST(req: NextRequest) {
         // Ensure upload directory exists
         await mkdir(UPLOAD_DIR, { recursive: true });
 
-        // Generate unique filename
-        const ext = file.name.split('.').pop() || 'jpg';
+        // Extension is derived from the validated MIME type — never trust the client filename,
+        // since a file uploaded as image/png with name "evil.html" would otherwise be stored as
+        // .html and served as HTML from /public/uploads (stored XSS).
         const filename = `${uuid()}.${ext}`;
         const filepath = join(UPLOAD_DIR, filename);
 

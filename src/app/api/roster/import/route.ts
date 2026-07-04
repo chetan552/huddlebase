@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { getSessionUser } from '@/lib/session';
 import { isApprovedCoachOrAdmin } from '@/lib/permissions';
+import { appUrl, createSecureToken, hashToken } from '@/lib/tokens';
+import { sendEmail, teamInviteEmail } from '@/lib/email';
 
 interface ImportRecord {
     name: string;
@@ -47,6 +50,13 @@ export async function POST(req: NextRequest) {
         });
         const takenJerseys = new Set(existingJerseys.map((m) => m.jersey!));
 
+        const team = await prisma.team.findUnique({
+            where: { id: teamId },
+            select: { name: true },
+        });
+        const teamName = team?.name ?? 'your team';
+        const pendingInvites: Array<{ email: string; token: string }> = [];
+
         const created: string[] = [];
         const skipped: string[] = [];
         const errors: Array<{ row: number; name: string; error: string }> = [];
@@ -67,20 +77,26 @@ export async function POST(req: NextRequest) {
                 continue;
             }
 
+            const teamRole = r.role?.toUpperCase() === 'COACH' ? 'COACH' : 'PLAYER';
             try {
-                // Find or create user
+                // Find or create user. New users get a random password and an invite token —
+                // they cannot log in until they accept the invite (which sets their password).
                 let playerUser = await prisma.user.findUnique({ where: { email } });
+                let isNewUser = false;
                 if (!playerUser) {
-                    const hashedPassword = await bcrypt.hash('password123', 12);
+                    const temporaryPassword = randomBytes(24).toString('base64url');
+                    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
                     playerUser = await prisma.user.create({
                         data: {
                             email,
                             password: hashedPassword,
                             name,
                             role: 'PLAYER',
+                            coachApproved: false,
                             phone: r.phone?.trim() || null,
                         },
                     });
+                    isNewUser = true;
                 }
 
                 // Check if already on team
@@ -96,17 +112,49 @@ export async function POST(req: NextRequest) {
                     data: {
                         userId: playerUser.id,
                         teamId,
-                        role: r.role?.toUpperCase() === 'COACH' ? 'COACH' : 'PLAYER',
+                        role: teamRole,
                         jersey,
                         position: r.position?.trim() || null,
                         category: r.category?.trim() || null,
                     },
                 });
 
+                if (isNewUser) {
+                    const inviteToken = createSecureToken();
+                    await prisma.teamInvite.create({
+                        data: {
+                            email,
+                            teamId,
+                            userId: playerUser.id,
+                            role: teamRole,
+                            tokenHash: hashToken(inviteToken),
+                            expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+                        },
+                    });
+                    pendingInvites.push({ email, token: inviteToken });
+                }
+
                 if (jersey) takenJerseys.add(jersey);
                 created.push(name);
-            } catch (err) {
+            } catch {
                 errors.push({ row: i + 1, name, error: 'Database error — row skipped' });
+            }
+        }
+
+        // Send invite emails after DB writes so an email failure doesn't roll back roster changes.
+        for (const { email, token } of pendingInvites) {
+            try {
+                await sendEmail({
+                    to: email,
+                    subject: `You're invited to ${teamName} on HuddleBase`,
+                    html: teamInviteEmail({
+                        inviterName: user.name,
+                        teamName,
+                        inviteUrl: appUrl(`/accept-invite?token=${token}`),
+                    }),
+                });
+            } catch (emailError) {
+                console.error('Import invite email failed:', email, emailError);
             }
         }
 

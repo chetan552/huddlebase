@@ -86,13 +86,29 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Only team staff can add roster members' }, { status: 403 });
         }
 
-        // Find or create user
+        const ALLOWED_TEAM_ROLES = new Set(['PLAYER', 'PARENT', 'COACH', 'MANAGER']);
+        const teamRole = ALLOWED_TEAM_ROLES.has(role) ? role : 'PLAYER';
+
+        // Find or create user. For newly-created users, derive the global role from the
+        // team role (never ADMIN, never auto-approved as coach) — admin approval is a
+        // separate flow.
         let playerUser = await prisma.user.findUnique({ where: { email } });
         if (!playerUser) {
             const temporaryPassword = randomBytes(24).toString('base64url');
             const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+            const newUserGlobalRole =
+                teamRole === 'COACH' ? 'COACH'
+                    : teamRole === 'PARENT' ? 'PARENT'
+                    : 'PLAYER';
             playerUser = await prisma.user.create({
-                data: { email, password: hashedPassword, name, role: role || 'PLAYER', coachApproved: role === 'COACH', phone: phone || null },
+                data: {
+                    email,
+                    password: hashedPassword,
+                    name,
+                    role: newUserGlobalRole,
+                    coachApproved: false,
+                    phone: phone || null,
+                },
             });
         }
 
@@ -114,7 +130,7 @@ export async function POST(req: NextRequest) {
             data: {
                 userId: playerUser.id,
                 teamId,
-                role: role || 'PLAYER',
+                role: teamRole,
                 jersey: jersey || null,
                 position: position || null,
                 category: category || null,
@@ -131,7 +147,7 @@ export async function POST(req: NextRequest) {
                 email,
                 teamId,
                 userId: playerUser.id,
-                role: role || 'PLAYER',
+                role: teamRole,
                 tokenHash: hashToken(inviteToken),
                 expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
             },

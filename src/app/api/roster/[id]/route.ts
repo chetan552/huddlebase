@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
+import { isTeamStaff } from '@/lib/permissions';
 
 export async function DELETE(
     req: NextRequest,
@@ -16,6 +17,17 @@ export async function DELETE(
 
         if (!memberId) {
             return NextResponse.json({ success: false, error: 'Member ID is required' }, { status: 400 });
+        }
+
+        const member = await prisma.teamMember.findUnique({
+            where: { id: memberId },
+            select: { teamId: true },
+        });
+        if (!member) {
+            return NextResponse.json({ success: false, error: 'Member not found' }, { status: 404 });
+        }
+        if (!(await isTeamStaff(user, member.teamId))) {
+            return NextResponse.json({ success: false, error: 'Only team staff can remove members' }, { status: 403 });
         }
 
         await prisma.teamMember.delete({
