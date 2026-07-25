@@ -116,6 +116,9 @@ export default function MoreScreen() {
 
     const menuItems = [
         { icon: '💵', label: 'Payments', desc: 'Invoices & finances', onPress: () => router.push('/payments') },
+        { icon: '🏆', label: 'Standings', desc: 'Season records & results', onPress: () => router.push('/standings') },
+        { icon: '🗓️', label: 'Availability', desc: 'Block out dates you are away', onPress: () => router.push('/availability') },
+        { icon: '📁', label: 'Team files', desc: 'Waivers, playbooks & forms', onPress: () => router.push('/files') },
         {
             icon: '🎨',
             label: 'Appearance',

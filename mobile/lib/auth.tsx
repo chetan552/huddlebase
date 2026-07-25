@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { api, setToken, removeToken, getToken } from './api';
+import { registerForPushNotifications, unregisterPushNotifications } from './push';
 
 export interface User {
     id: string;
@@ -34,6 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const res = await api<User>('/api/auth/me');
             if (res.success && res.data) {
                 setUser(res.data);
+                // Re-register on every launch: tokens can rotate after an app update,
+                // and the server upserts so repeats are harmless.
+                registerForPushNotifications();
             } else {
                 await removeToken();
                 setUser(null);
@@ -58,6 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (res.success && res.data && res.token) {
                 await setToken(res.token);
                 setUser(res.data);
+                // Fire-and-forget: a push failure must not block sign-in.
+                registerForPushNotifications();
                 return { success: true };
             }
             return { success: false, error: res.error || 'Login failed', requiresTwoFactor: res.requiresTwoFactor };
@@ -82,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = async () => {
+        // Deregister before dropping the token — the API call needs it to authenticate.
+        await unregisterPushNotifications();
         await removeToken();
         setUser(null);
     };

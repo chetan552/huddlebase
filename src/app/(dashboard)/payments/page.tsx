@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import TreasuryPanel from './TreasuryPanel';
 import { useAuth } from '@/lib/auth';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CreditCard, Check, Download, X } from 'lucide-react';
@@ -186,6 +187,9 @@ export default function PaymentsPage() {
                     )}
                 </div>
             </div>
+
+            {/* Staff-only treasury: collected vs outstanding, plus payment plans. */}
+            {isStaff && <TreasuryPanel teams={teams} />}
 
             {/* Summary Cards */}
             <div className="grid-stats">

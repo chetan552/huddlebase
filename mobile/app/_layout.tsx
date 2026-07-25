@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { StatusBar } from 'react-native';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { Colors } from '../lib/theme';
+import { addNotificationResponseListener, clearBadge } from '../lib/push';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -28,6 +29,27 @@ function RootLayoutNav() {
     }
   }, [user, loading, segments]);
 
+  // Tapping a notification deep-links to the relevant screen. The payload carries the
+  // web app's path, which is mapped here onto the mobile route tree.
+  useEffect(() => {
+    if (!user) return;
+
+    const subscription = addNotificationResponseListener(({ link, type }) => {
+      clearBadge();
+      if (type === 'NEW_MESSAGE') {
+        router.push('/(tabs)/chat');
+      } else if (type === 'NEW_EVENT' || type === 'CANCELLED_EVENT') {
+        router.push('/(tabs)/calendar');
+      } else if (link?.startsWith('/media')) {
+        router.push('/(tabs)');
+      } else {
+        router.push('/(tabs)');
+      }
+    });
+
+    return () => subscription.remove();
+  }, [user, router]);
+
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
@@ -46,6 +68,9 @@ function RootLayoutNav() {
         <Stack.Screen name="chat/[teamId]" options={{ title: 'Chat', headerBackTitle: 'Back' }} />
         <Stack.Screen name="payments" options={{ title: 'Payments', headerBackTitle: 'Back' }} />
         <Stack.Screen name="event/[id]" options={{ title: 'Event Details', headerBackTitle: 'Back' }} />
+        <Stack.Screen name="standings" options={{ title: 'Standings', headerBackTitle: 'Back' }} />
+        <Stack.Screen name="availability" options={{ title: 'Availability', headerBackTitle: 'Back' }} />
+        <Stack.Screen name="files" options={{ title: 'Team Files', headerBackTitle: 'Back' }} />
       </Stack>
     </>
   );

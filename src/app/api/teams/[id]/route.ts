@@ -1,8 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
-import { isApprovedCoachOrAdmin } from '@/lib/permissions';
+import { isApprovedCoachOrAdmin, isTeamStaff } from '@/lib/permissions';
 import { writeAuditLog } from '@/lib/audit';
+import { isValidTimeZone } from '@/lib/timezone';
+
+/**
+ * Update team settings.
+ *
+ * Timezone matters most here: event start times are entered as wall-clock time and
+ * interpreted against this zone, so a team that sets it wrong will see every event
+ * shift. Changing it does not move existing events — they keep the UTC instant they
+ * were saved with.
+ */
+export async function PATCH(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = getSessionUser(req);
+        if (!user) {
+            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { id: teamId } = await params;
+        if (!(await isTeamStaff(user, teamId))) {
+            return NextResponse.json({ success: false, error: 'Only team staff can update the team' }, { status: 403 });
+        }
+
+        const { name, sport, season, color, timezone } = await req.json();
+
+        if (timezone !== undefined && !isValidTimeZone(timezone)) {
+            return NextResponse.json({ success: false, error: 'Invalid timezone' }, { status: 400 });
+        }
+        if (name !== undefined && !String(name).trim()) {
+            return NextResponse.json({ success: false, error: 'Name cannot be empty' }, { status: 400 });
+        }
+
+        const team = await prisma.team.update({
+            where: { id: teamId },
+            data: {
+                ...(name !== undefined && { name: String(name).trim() }),
+                ...(sport !== undefined && { sport }),
+                ...(season !== undefined && { season: season || null }),
+                ...(color !== undefined && { color }),
+                ...(timezone !== undefined && { timezone }),
+            },
+            select: { id: true, name: true, sport: true, season: true, color: true, timezone: true },
+        });
+
+        return NextResponse.json({ success: true, data: team });
+    } catch (error) {
+        console.error('Update team error:', error);
+        return NextResponse.json({ success: false, error: 'Failed to update team' }, { status: 500 });
+    }
+}
 
 export async function DELETE(
     req: NextRequest,

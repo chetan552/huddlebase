@@ -18,7 +18,11 @@
       "Bash(git diff *)",
       "Skill(claude-api)",
       "Skill(claude-api:*)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(python3 -)",
+      "Bash(timeout 75 npx expo start --port 8099)",
+      "Bash(pkill -f \"expo start\")",
+      "Bash(npx expo *)"
     ],
     "additionalDirectories": [
       "/Users/chetanchadalavada/Development/github/TeamManagementApp/src",

@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { SPORTS } from '@/lib/constants';
+import { COMMON_TIMEZONES, browserTimeZone } from '@/lib/timezone';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import VenueManager from './VenueManager';
 import { Users, Trash2, X, Image as ImageIcon, Loader2, Upload, Check } from 'lucide-react';
 
 interface Team {
@@ -23,7 +25,7 @@ export default function TeamsPage() {
     const { user } = useAuth();
     const [teams, setTeams] = useState<Team[]>([]);
     const [showModal, setShowModal] = useState(false);
-    const [formData, setFormData] = useState({ name: '', sport: 'Basketball', season: '', color: '#3b82f6' });
+    const [formData, setFormData] = useState({ name: '', sport: 'Basketball', season: '', color: '#3b82f6', timezone: browserTimeZone() });
     const [loading, setLoading] = useState(false);
     const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
     const isStaff = user?.role === 'ADMIN' || (user?.role === 'COACH' && user.coachApproved);
@@ -69,7 +71,7 @@ export default function TeamsPage() {
             const data = await res.json();
             if (data.success) {
                 setShowModal(false);
-                setFormData({ name: '', sport: 'Basketball', season: '', color: '#3b82f6' });
+                setFormData({ name: '', sport: 'Basketball', season: '', color: '#3b82f6', timezone: browserTimeZone() });
                 setLogoUrl(null);
                 fetchTeams();
             }
@@ -201,6 +203,10 @@ export default function TeamsPage() {
             )}
 
             {/* Create Team Modal */}
+            {isStaff && teams.length > 0 && (
+                <VenueManager teams={teams.map((t) => ({ id: t.id, name: t.name }))} />
+            )}
+
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -242,6 +248,22 @@ export default function TeamsPage() {
                                         value={formData.season}
                                         onChange={(e) => setFormData({ ...formData, season: e.target.value })}
                                     />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Time Zone</label>
+                                    <select
+                                        className="form-input form-select"
+                                        value={formData.timezone}
+                                        onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                                    >
+                                        {COMMON_TIMEZONES.map((tz) => (
+                                            <option key={tz.value} value={tz.value}>{tz.label}</option>
+                                        ))}
+                                    </select>
+                                    <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '0.35rem' }}>
+                                        Practice and game times are entered in this zone. Everyone sees them converted to
+                                        their own local time.
+                                    </p>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Team Color</label>

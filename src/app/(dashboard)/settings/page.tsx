@@ -7,7 +7,7 @@ import QRCode from 'qrcode';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import { useTheme } from '@/lib/useTheme';
 import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/passwordPolicy';
-import { Bell, Mail, Moon, Camera, Loader2, LogOut, AlertTriangle, ShieldCheck, LifeBuoy } from 'lucide-react';
+import { Bell, Mail, Moon, Camera, Loader2, LogOut, AlertTriangle, ShieldCheck, LifeBuoy, CalendarPlus, Copy, Check, RefreshCw } from 'lucide-react';
 
 const SUPPORT_CATEGORIES = [
     { value: 'ACCOUNT', label: 'Account' },
@@ -17,6 +17,135 @@ const SUPPORT_CATEGORIES = [
     { value: 'AI_ACCESS', label: 'AI access' },
     { value: 'OTHER', label: 'Other' },
 ];
+
+interface CalendarSubscription {
+    url: string;
+    webcalUrl: string;
+    googleUrl: string;
+    teams: { id: string; name: string; url: string; webcalUrl: string }[];
+}
+
+/**
+ * Personal iCal subscription. The URL is the credential — anyone holding it can read
+ * the schedule — so the UI offers a regenerate action that revokes old subscriptions.
+ */
+function CalendarSubscriptionCard() {
+    const [subscription, setSubscription] = useState<CalendarSubscription | null>(null);
+    const [scope, setScope] = useState('all');
+    const [copied, setCopied] = useState(false);
+    const [resetting, setResetting] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await fetch('/api/calendar/subscription');
+                const data = await res.json();
+                if (data.success) setSubscription(data.data);
+                else setError('Could not load your calendar link.');
+            } catch {
+                setError('Could not load your calendar link.');
+            }
+        })();
+    }, []);
+
+    const selected = subscription
+        ? scope === 'all'
+            ? { url: subscription.url, webcalUrl: subscription.webcalUrl }
+            : subscription.teams.find((t) => t.id === scope) ?? { url: subscription.url, webcalUrl: subscription.webcalUrl }
+        : null;
+
+    const copy = async () => {
+        if (!selected) return;
+        try {
+            await navigator.clipboard.writeText(selected.url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            setError('Copy failed — select the link and copy it manually.');
+        }
+    };
+
+    const regenerate = async () => {
+        setResetting(true);
+        setError('');
+        try {
+            const res = await fetch('/api/calendar/subscription', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                // Re-fetch so the per-team links pick up the new token too.
+                const refreshed = await fetch('/api/calendar/subscription');
+                const refreshedData = await refreshed.json();
+                if (refreshedData.success) setSubscription(refreshedData.data);
+                setScope('all');
+            } else {
+                setError('Could not reset the link.');
+            }
+        } catch {
+            setError('Could not reset the link.');
+        }
+        setResetting(false);
+    };
+
+    return (
+        <div className="card" style={{ marginBottom: '1.5rem' }}>
+            <h2 className="card-title" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <CalendarPlus size={18} color="var(--primary-400)" /> Calendar subscription
+            </h2>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', marginBottom: '1.25rem' }}>
+                Subscribe in Apple Calendar, Google Calendar or Outlook and your games and practices stay in sync
+                automatically — including cancellations.
+            </p>
+
+            {error && <div className="form-error" style={{ marginBottom: '0.75rem' }}>{error}</div>}
+
+            {!subscription ? (
+                <div className="skeleton" style={{ height: 44 }} />
+            ) : (
+                <>
+                    {subscription.teams.length > 1 && (
+                        <div className="form-group">
+                            <label className="form-label">Which schedule</label>
+                            <select className="form-select" value={scope} onChange={(e) => setScope(e.target.value)}>
+                                <option value="all">All my teams</option>
+                                {subscription.teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                        <input className="form-input" readOnly value={selected?.url ?? ''} onFocus={(e) => e.target.select()} style={{ flex: 1, minWidth: 200, fontSize: '0.78rem', fontFamily: 'monospace' }} />
+                        <button className="btn btn-outline" onClick={copy} type="button">
+                            {copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <a className="btn btn-primary btn-sm" href={selected?.webcalUrl}>
+                            Add to Apple Calendar
+                        </a>
+                        <a
+                            className="btn btn-outline btn-sm"
+                            href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(selected?.url ?? '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Add to Google Calendar
+                        </a>
+                        <button className="btn btn-ghost btn-sm" onClick={regenerate} disabled={resetting} type="button" style={{ marginLeft: 'auto' }}>
+                            <RefreshCw size={14} /> {resetting ? 'Resetting…' : 'Reset link'}
+                        </button>
+                    </div>
+
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '0.85rem' }}>
+                        Treat this link like a password — anyone with it can see your schedule. Resetting it disconnects
+                        every calendar app currently subscribed.
+                    </p>
+                </>
+            )}
+        </div>
+    );
+}
 
 function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
     return (
@@ -806,6 +935,8 @@ export default function SettingsPage() {
                     )}
                 </div>
             </div>
+
+            <CalendarSubscriptionCard />
 
             {/* Preferences */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>

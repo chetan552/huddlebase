@@ -25,6 +25,10 @@ model User {
   twoFactorEnabled Boolean @default(false)
   twoFactorSecret  String?
   twoFactorRecoveryCodes String?
+  // Opaque key for the personal iCal subscription URL. Regenerating it revokes
+  // every calendar app still pointed at the old URL.
+  calendarToken String?  @unique
+  timezone      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -32,6 +36,16 @@ model User {
   teamMembers    TeamMember[]
   playerProfile  PlayerProfile?
   sentMessages   Message[]       @relation("SentMessages")
+  pushTokens     PushToken[]
+  availability   AvailabilityBlock[]
+  conversations  ConversationParticipant[]
+  reactions      MessageReaction[]
+  uploadedMedia  MediaItem[]
+  createdAlbums  MediaAlbum[]
+  assignments    EventAssignment[]
+  uploadedFiles  TeamFile[]
+  registrations  RegistrationSubmission[]
+  waiverSignatures WaiverSignature[]
   announcements  Announcement[]
   rsvps          RSVP[]
   attendances    Attendance[]
@@ -124,6 +138,9 @@ model Team {
   clubId    String?
   logo      String?
   color     String   @default("#3b82f6")
+  // IANA zone the team's schedule is authored in. Event wall-clock times are
+  // interpreted against this unless the event overrides it.
+  timezone  String   @default("America/New_York")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -134,6 +151,15 @@ model Team {
   announcements Announcement[]
   invoices      Invoice[]
   invites       TeamInvite[]
+  conversations Conversation[]
+  availability  AvailabilityBlock[]
+  albums        MediaAlbum[]
+  media         MediaItem[]
+  venues        Venue[]
+  files         TeamFile[]
+  fileFolders   TeamFileFolder[]
+  registrations RegistrationForm[]
+  paymentPlans  PaymentPlan[]
 }
 
 model TeamMember {
@@ -227,17 +253,91 @@ model Event {
   homeScore    Int?
   awayScore    Int?
   result       String?  // WIN, LOSS, DRAW
+  // Recurring events are materialised: every occurrence is a real Event row sharing
+  // a seriesId. RSVPs, attendance and stats then hang off an occurrence for free,
+  // and "edit just this one" is an ordinary row update.
   isRecurring Boolean  @default(false)
-  recurrence  String?  // JSON: { frequency, interval, until }
+  recurrence  String?  // JSON: { frequency, interval, count, until, weekdays }
+  seriesId    String?
   isCancelled Boolean  @default(false)
+  // Overrides the team zone for travel games played in another timezone.
+  timezone    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Optional link to a saved venue. `location` is kept as free text so existing
+  // events and one-off addresses still work without a Venue row.
+  venueId     String?
+
   team        Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  venue       Venue?       @relation(fields: [venueId], references: [id], onDelete: SetNull)
   rsvps       RSVP[]
   attendances Attendance[]
   playerStats PlayerStat[]
   volunteerNeeds EventVolunteerNeed[]
+  assignments EventAssignment[]
+
+  @@index([seriesId])
+  @@index([teamId, startTime])
+  @@index([venueId])
+}
+
+// ============================================
+// Venues
+// ============================================
+
+// Saved locations, so a coach types the field address once a season instead of
+// once per event.
+model Venue {
+  id        String   @id @default(uuid())
+  teamId    String
+  name      String
+  address   String?
+  city      String?
+  region    String?
+  postalCode String?
+  // Coordinates enable a directions link that resolves precisely, rather than
+  // relying on the address string matching what the map provider expects.
+  latitude  Float?
+  longitude Float?
+  notes     String?  // parking, entrance, field number
+  mapUrl    String?  // explicit override for an awkward-to-geocode location
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team   Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  events Event[]
+
+  @@index([teamId, name])
+}
+
+// ============================================
+// Event assignments
+// ============================================
+
+// Duty roster beyond snacks: scorekeeper, referee, field setup, concessions.
+// Distinct from EventVolunteerNeed (which stays for the snack/drink sign-up sheet)
+// because an assignment is given to a specific person rather than claimed.
+model EventAssignment {
+  id         String   @id @default(uuid())
+  eventId    String
+  userId     String?  // null while the slot is still open
+  role       String   // SCOREKEEPER, REFEREE, FIELD_SETUP, CONCESSIONS, TEAM_PARENT, OTHER
+  label      String?  // free-text override for OTHER
+  notes      String?
+  status     String   @default("ASSIGNED") // ASSIGNED, ACCEPTED, DECLINED
+  // True when the rotation assigned this rather than a coach picking by hand,
+  // so re-running the rotation can safely replace it.
+  autoAssigned Boolean @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([userId, status])
 }
 
 model EventVolunteerNeed {
@@ -278,6 +378,9 @@ model RSVP {
   eventId   String
   status    String   @default("PENDING") // GOING, MAYBE, NOT_GOING, PENDING
   note      String?
+  // Set when an AvailabilityBlock produced this answer rather than the user.
+  // Auto-filled rows may be overwritten by a later block; explicit ones never are.
+  autoFilled Boolean @default(false)
   updatedAt DateTime @updatedAt
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -305,16 +408,83 @@ model Attendance {
 // Communication
 // ============================================
 
-model Message {
+// A conversation is the container every message now belongs to. Each team gets one
+// TEAM conversation (the old broadcast channel); DIRECT and GROUP conversations let
+// members talk without broadcasting to the whole roster.
+model Conversation {
   id        String   @id @default(uuid())
-  teamId    String
-  senderId  String
-  content   String
-  threadId  String?
+  teamId    String?  // null for cross-team direct messages
+  type      String   @default("TEAM") // TEAM, DIRECT, GROUP
+  name      String?  // GROUP only; TEAM and DIRECT derive their title
+  createdById String?
+  // Deduplication key, unique where present:
+  //   TEAM   -> "team:<teamId>"
+  //   DIRECT -> "direct:<sorted,user,ids>"
+  //   GROUP  -> null (a team may have any number of named group chats)
+  // Nulls don't collide in Postgres, so one column covers all three cases and lets
+  // us upsert atomically instead of racing two creates.
+  lookupKey String?  @unique
+  lastMessageAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team         Team?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  participants ConversationParticipant[]
+
+  @@index([teamId])
+  @@index([lastMessageAt])
+}
+
+model ConversationParticipant {
+  id             String    @id @default(uuid())
+  conversationId String
+  userId         String
+  // Everything created at or before this instant is read. Unread count is a
+  // cheap count() against it rather than a per-message receipt row.
+  lastReadAt     DateTime?
+  mutedAt        DateTime?
+  joinedAt       DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  teamId         String?  // retained so team-scoped queries and cascades keep working
+  senderId       String
+  content        String
+  threadId       String?
+  attachments    String?  // JSON array of { url, name, type, size }
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  team         Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  reactions    MessageReaction[]
+
+  @@index([conversationId, createdAt])
+  @@index([threadId])
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
   createdAt DateTime @default(now())
 
-  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  sender User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
 }
 
 model Announcement {
@@ -333,8 +503,144 @@ model Announcement {
 }
 
 // ============================================
+// Team files
+// ============================================
+
+model TeamFileFolder {
+  id        String   @id @default(uuid())
+  teamId    String
+  name      String
+  createdAt DateTime @default(now())
+
+  team  Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  files TeamFile[]
+
+  @@unique([teamId, name])
+}
+
+// Team-level document storage: waivers, playbooks, league rules, medical forms.
+// Distinct from PlayerProfile.documents, which is per-player and private.
+model TeamFile {
+  id          String   @id @default(uuid())
+  teamId      String
+  folderId    String?
+  uploaderId  String
+  name        String
+  description String?
+  url         String
+  mimeType    String?
+  sizeBytes   Int?
+  // Staff-only files (contracts, budgets) are hidden from players and parents.
+  staffOnly   Boolean  @default(false)
+  downloadCount Int    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team     Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  folder   TeamFileFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  uploader User            @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, createdAt])
+  @@index([folderId])
+}
+
+// ============================================
+// Registration & waivers
+// ============================================
+
+// A season signup form. `fields` holds the question schema as JSON so coaches can
+// build a form without a migration per question.
+model RegistrationForm {
+  id          String   @id @default(uuid())
+  teamId      String
+  title       String
+  description String?
+  season      String?
+  // JSON array of { id, label, type, required, options[], helpText }
+  fields      String   @default("[]")
+  // Optional fee. When set, submitting generates an Invoice for the registrant.
+  feeAmount   Float?
+  feeTitle    String?
+  waiverText  String?  // shown for e-signature before submission completes
+  waiverTitle String?
+  status      String   @default("DRAFT") // DRAFT, OPEN, CLOSED
+  opensAt     DateTime?
+  closesAt    DateTime?
+  maxSubmissions Int?
+  // Public token so families can register before they have an account.
+  publicToken String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team        Team                     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  submissions RegistrationSubmission[]
+
+  @@index([teamId, status])
+}
+
+model RegistrationSubmission {
+  id        String   @id @default(uuid())
+  formId    String
+  userId    String?  // null when submitted by someone without an account
+  // Who the registration is for — may be a child who has no login yet.
+  playerName String
+  playerEmail String?
+  // JSON object keyed by field id
+  answers   String   @default("{}")
+  status    String   @default("SUBMITTED") // SUBMITTED, APPROVED, REJECTED, WAITLISTED
+  invoiceId String?  // set when the form carried a fee
+  reviewNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  form      RegistrationForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user      User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  signature WaiverSignature?
+
+  @@index([formId, status])
+  @@index([userId])
+}
+
+// A typed-name e-signature. Stores the exact waiver text signed, because the form's
+// wording may change later and the signature must remain evidence of what was agreed.
+model WaiverSignature {
+  id           String   @id @default(uuid())
+  submissionId String   @unique
+  userId       String?
+  signedName   String
+  waiverText   String
+  ipAddress    String?
+  userAgent    String?
+  signedAt     DateTime @default(now())
+
+  submission RegistrationSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  user       User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// ============================================
 // Payments
 // ============================================
+
+// A fee split into scheduled instalments. Generating a plan creates one Invoice per
+// instalment, so the existing payment, reminder and checkout flows work unchanged.
+model PaymentPlan {
+  id          String   @id @default(uuid())
+  teamId      String
+  title       String
+  description String?
+  totalAmount Float
+  installments Int
+  // MONTHLY, BIWEEKLY, WEEKLY — spacing between instalment due dates.
+  frequency   String   @default("MONTHLY")
+  firstDueDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team     Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@index([teamId])
+}
 
 model Invoice {
   id          String   @id @default(uuid())
@@ -344,13 +650,24 @@ model Invoice {
   description String?
   amount      Float
   dueDate     DateTime
-  status      String   @default("PENDING") // PENDING, PAID, OVERDUE, CANCELLED
+  status      String   @default("PENDING") // PENDING, PAID, OVERDUE, CANCELLED, REFUNDED
+  // Instalment tracking: which part of a plan this invoice represents.
+  planId          String?
+  installmentNumber Int?
+  // When the last overdue reminder went out, so the nightly job doesn't spam.
+  lastReminderAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  team     Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  player   User      @relation("InvoicedPlayer", fields: [playerId], references: [id], onDelete: Cascade)
+  team     Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player   User         @relation("InvoicedPlayer", fields: [playerId], references: [id], onDelete: Cascade)
+  plan     PaymentPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
   payments Payment[]
+  refunds  Refund[]
+
+  @@index([teamId, status])
+  @@index([planId])
+  @@index([playerId])
 }
 
 model Payment {
@@ -360,10 +677,34 @@ model Payment {
   amount    Float
   method    String   @default("MANUAL") // MANUAL, STRIPE, CHECK, CASH
   note      String?
+  // Stripe identifiers, needed to issue a refund through the API later.
+  externalId String?
   paidAt    DateTime @default(now())
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refunds Refund[]
+
+  @@index([invoiceId])
+}
+
+// Refunds are recorded rather than deleting a Payment, so the ledger stays additive
+// and the treasury view can show gross collected, refunded, and net separately.
+model Refund {
+  id        String   @id @default(uuid())
+  invoiceId String
+  paymentId String?
+  amount    Float
+  reason    String?
+  method    String   @default("MANUAL") // MANUAL, STRIPE
+  externalId String?
+  issuedById String?
+  createdAt DateTime @default(now())
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
 }
 
 // ============================================
@@ -381,6 +722,94 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+}
+
+// One row per installed device. Expo returns DeviceNotRegistered for uninstalled
+// apps, which is when we delete the row — tokens are otherwise stable.
+model PushToken {
+  id         String   @id @default(uuid())
+  userId     String
+  token      String   @unique
+  platform   String   @default("ios") // ios, android
+  deviceName String?
+  failureCount Int    @default(0)
+  lastUsedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================
+// Availability
+// ============================================
+
+// A date range a player is away for. Overlapping events get an auto-filled RSVP so
+// coaches see the gap without the family tapping through every event.
+model AvailabilityBlock {
+  id        String   @id @default(uuid())
+  userId    String
+  teamId    String?  // null applies the block across every team the user is on
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("UNAVAILABLE") // UNAVAILABLE, LIMITED, AVAILABLE
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate, endDate])
+  @@index([teamId])
+}
+
+// ============================================
+// Media
+// ============================================
+
+model MediaAlbum {
+  id          String   @id @default(uuid())
+  teamId      String
+  name        String
+  description String?
+  coverUrl    String?
+  eventId     String?  // optionally tied to a game or practice
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team      Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy User        @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  items     MediaItem[]
+
+  @@index([teamId, createdAt])
+}
+
+model MediaItem {
+  id           String   @id @default(uuid())
+  albumId      String?
+  teamId       String
+  uploaderId   String
+  url          String
+  thumbnailUrl String?
+  type         String   @default("IMAGE") // IMAGE, VIDEO
+  caption      String?
+  width        Int?
+  height       Int?
+  sizeBytes    Int?
+  durationSec  Int?
+  createdAt    DateTime @default(now())
+
+  album    MediaAlbum? @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  team     Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  uploader User        @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, createdAt])
+  @@index([albumId])
 }
 
 // ============================================

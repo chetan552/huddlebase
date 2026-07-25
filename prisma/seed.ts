@@ -100,9 +100,35 @@ async function main() {
         { teamId: team1.id, senderId: coach.id, content: 'Great teamwork everyone 💪 See you all tomorrow!' },
     ];
 
+    // Messages hang off the team's broadcast conversation, so seed that first and
+    // enrol every member for unread tracking.
+    const team1Members = await prisma.teamMember.findMany({
+        where: { teamId: team1.id },
+        select: { userId: true },
+    });
+    const team1Conversation = await prisma.conversation.upsert({
+        where: { lookupKey: `team:${team1.id}` },
+        create: {
+            teamId: team1.id,
+            type: 'TEAM',
+            lookupKey: `team:${team1.id}`,
+            participants: {
+                create: team1Members.map((m) => ({ userId: m.userId })),
+            },
+        },
+        update: {},
+    });
+
     for (const m of messages) {
-        await prisma.message.create({ data: m });
+        await prisma.message.create({
+            data: { ...m, conversationId: team1Conversation.id },
+        });
     }
+
+    await prisma.conversation.update({
+        where: { id: team1Conversation.id },
+        data: { lastMessageAt: new Date() },
+    });
 
     // Create invoices
     const invoices = [

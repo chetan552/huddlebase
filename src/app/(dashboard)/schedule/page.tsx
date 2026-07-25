@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { getAvatarColor, getInitials } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Cookie, CupSoda, Package, Plus, Trash2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Cookie, CupSoda, Package, Plus, Trash2, X, MapPin, Navigation } from 'lucide-react';
+import AssignmentsPanel from './AssignmentsPanel';
 
 interface Event {
     id: string;
@@ -20,6 +21,38 @@ interface Event {
     homeScore: number | null;
     awayScore: number | null;
     result: string | null;
+    timezone?: string;
+    timezoneLabel?: string;
+    isRecurring?: boolean;
+    seriesId?: string | null;
+    teamId?: string;
+    venueName?: string | null;
+    venueAddress?: string | null;
+    venueNotes?: string | null;
+    directionsUrl?: string | null;
+}
+
+const WEEKDAY_OPTIONS = [
+    { value: 0, label: 'S' }, { value: 1, label: 'M' }, { value: 2, label: 'T' },
+    { value: 3, label: 'W' }, { value: 4, label: 'T' }, { value: 5, label: 'F' },
+    { value: 6, label: 'S' },
+];
+
+const REPEAT_OPTIONS = [
+    { value: '', label: 'Does not repeat' },
+    { value: 'WEEKLY', label: 'Weekly' },
+    { value: 'BIWEEKLY', label: 'Every other week' },
+    { value: 'DAILY', label: 'Daily' },
+    { value: 'MONTHLY', label: 'Monthly' },
+];
+
+/** Three months past the start date, used when a coach sets a repeat but no end. */
+function defaultRepeatUntil(startTime: string): string {
+    const base = startTime ? new Date(startTime) : new Date();
+    if (Number.isNaN(base.getTime())) return '';
+    const until = new Date(base);
+    until.setMonth(until.getMonth() + 3);
+    return until.toISOString().slice(0, 10);
 }
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -115,6 +148,12 @@ export default function SchedulePage() {
         startTime: '', endTime: '', notes: '',
         opponentName: '', homeScore: '', awayScore: '', result: '',
     });
+    // Recurrence lives outside formData because it is assembled into a nested rule
+    // object rather than posted as flat fields.
+    const [repeat, setRepeat] = useState({ frequency: '', weekdays: [] as number[], until: '' });
+    const [venues, setVenues] = useState<Array<{ id: string; teamId: string; name: string; formattedAddress: string }>>([]);
+    const [venueId, setVenueId] = useState('');
+    const [createError, setCreateError] = useState('');
     const [loading, setLoading] = useState(false);
     const [selectedEventRsvps, setSelectedEventRsvps] = useState<Event | null>(null);
     const [rsvps, setRsvps] = useState<RSVP[]>([]);
@@ -129,7 +168,7 @@ export default function SchedulePage() {
         lateReason: string | null;
     }>>([]);
     const [attendanceSaving, setAttendanceSaving] = useState(false);
-    const [eventModalTab, setEventModalTab] = useState<'rsvps' | 'attendance' | 'volunteers'>('rsvps');
+    const [eventModalTab, setEventModalTab] = useState<'rsvps' | 'attendance' | 'volunteers' | 'duties'>('rsvps');
     const [volunteerNeeds, setVolunteerNeeds] = useState<VolunteerNeed[]>([]);
     const [volunteerDrafts, setVolunteerDrafts] = useState<VolunteerNeedDraft[]>([]);
     const [loadingVolunteers, setLoadingVolunteers] = useState(false);
@@ -381,26 +420,69 @@ export default function SchedulePage() {
         return events.filter((e) => e.startTime.startsWith(dateStr));
     };
 
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await fetch('/api/venues');
+                const data = await res.json();
+                if (data.success) setVenues(data.data);
+            } catch { /* the free-text location field still works */ }
+        })();
+    }, []);
+
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setCreateError('');
         try {
+            // The API needs an explicit end for a recurring series, so default to
+            // three months out when the coach hasn't picked one.
+            const recurrence = repeat.frequency
+                ? {
+                      frequency: repeat.frequency,
+                      interval: 1,
+                      ...(repeat.weekdays.length > 0 && { weekdays: repeat.weekdays }),
+                      until: repeat.until || defaultRepeatUntil(formData.startTime),
+                  }
+                : undefined;
+
             const res = await fetch('/api/events', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, recurrence, venueId: venueId || null }),
             });
             const data = await res.json();
             if (data.success) {
                 setShowModal(false);
                 setFormData({ title: '', type: 'PRACTICE', teamId: '', location: '', startTime: '', endTime: '', notes: '', opponentName: '', homeScore: '', awayScore: '', result: '' });
+                setRepeat({ frequency: '', weekdays: [], until: '' });
+                setVenueId('');
                 fetchEvents();
+            } else {
+                setCreateError(data.error || 'Could not create that event.');
             }
         } catch (err) {
             console.error('Failed to create event:', err);
+            setCreateError('Something went wrong. Try again.');
         }
         setLoading(false);
     };
+
+    const deleteEvent = async (event: Event, scope: 'THIS' | 'ALL') => {
+        try {
+            const res = await fetch(`/api/events/${event.id}?scope=${scope}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                setSelectedEventRsvps(null);
+                fetchEvents();
+            }
+        } catch (err) {
+            console.error('Failed to delete event:', err);
+        }
+    };
+
+    // Only offer venues belonging to the team the event is being created for.
+    const teamVenues = venues.filter((v) => !formData.teamId || v.teamId === formData.teamId);
 
     return (
         <div className="page-content">
@@ -581,15 +663,37 @@ export default function SchedulePage() {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="form-group">
-                                    <label className="form-label">Location</label>
-                                    <input
-                                        className="form-input"
-                                        placeholder="e.g., City Sports Complex"
-                                        value={formData.location}
-                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                    />
-                                </div>
+                                {teamVenues.length > 0 && (
+                                    <div className="form-group">
+                                        <label className="form-label">Saved venue</label>
+                                        <select
+                                            className="form-input form-select"
+                                            value={venueId}
+                                            onChange={(e) => setVenueId(e.target.value)}
+                                        >
+                                            <option value="">Use a one-off location</option>
+                                            {teamVenues.map((v) => (
+                                                <option key={v.id} value={v.id}>
+                                                    {v.formattedAddress ? `${v.name} — ${v.formattedAddress}` : v.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '0.35rem' }}>
+                                            Saved venues carry their address and a directions link to everyone on the team.
+                                        </p>
+                                    </div>
+                                )}
+                                {!venueId && (
+                                    <div className="form-group">
+                                        <label className="form-label">Location</label>
+                                        <input
+                                            className="form-input"
+                                            placeholder="e.g., City Sports Complex"
+                                            value={formData.location}
+                                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                        />
+                                    </div>
+                                )}
                                 {formData.type === 'GAME' && (
                                     <div className="form-group">
                                         <label className="form-label">Opponent</label>
@@ -622,11 +726,85 @@ export default function SchedulePage() {
                                         />
                                     </div>
                                 </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Repeat</label>
+                                    <select
+                                        className="form-input form-select"
+                                        value={repeat.frequency}
+                                        onChange={(e) => setRepeat({ ...repeat, frequency: e.target.value })}
+                                    >
+                                        {REPEAT_OPTIONS.map((o) => (
+                                            <option key={o.value} value={o.value}>{o.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {repeat.frequency && (
+                                    <div style={{
+                                        padding: '0.85rem', borderRadius: 'var(--radius-md)',
+                                        background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
+                                        display: 'flex', flexDirection: 'column', gap: '0.85rem',
+                                    }}>
+                                        {(repeat.frequency === 'WEEKLY' || repeat.frequency === 'BIWEEKLY') && (
+                                            <div>
+                                                <label className="form-label">On these days</label>
+                                                <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                                    {WEEKDAY_OPTIONS.map((d, i) => {
+                                                        const on = repeat.weekdays.includes(d.value);
+                                                        return (
+                                                            <button
+                                                                key={d.value}
+                                                                type="button"
+                                                                aria-label={DAYS[i]}
+                                                                aria-pressed={on}
+                                                                onClick={() => setRepeat({
+                                                                    ...repeat,
+                                                                    weekdays: on
+                                                                        ? repeat.weekdays.filter((w) => w !== d.value)
+                                                                        : [...repeat.weekdays, d.value],
+                                                                })}
+                                                                style={{
+                                                                    width: 32, height: 32, borderRadius: '50%', cursor: 'pointer',
+                                                                    fontSize: '0.75rem', fontWeight: 600,
+                                                                    background: on ? 'var(--primary-500, #3b82f6)' : 'rgba(148,163,184,0.1)',
+                                                                    color: on ? 'white' : 'var(--text-secondary)',
+                                                                    border: '1px solid transparent',
+                                                                }}
+                                                            >
+                                                                {d.label}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '0.35rem' }}>
+                                                    Leave blank to repeat on the same weekday as the start date.
+                                                </p>
+                                            </div>
+                                        )}
+                                        <div className="form-group" style={{ margin: 0 }}>
+                                            <label className="form-label">Repeat until</label>
+                                            <input
+                                                type="date"
+                                                className="form-input"
+                                                value={repeat.until}
+                                                min={formData.startTime ? formData.startTime.slice(0, 10) : undefined}
+                                                onChange={(e) => setRepeat({ ...repeat, until: e.target.value })}
+                                            />
+                                            <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '0.35rem' }}>
+                                                Defaults to three months out. Each date is created as its own event, so you
+                                                can cancel or reschedule one without touching the rest.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {createError && <div className="form-error" style={{ marginTop: '0.75rem' }}>{createError}</div>}
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary" disabled={loading}>
-                                    {loading ? 'Creating...' : 'Create Event'}
+                                    {loading ? 'Creating...' : repeat.frequency ? 'Create Series' : 'Create Event'}
                                 </button>
                             </div>
                         </form>
@@ -643,12 +821,65 @@ export default function SchedulePage() {
                                     {selectedEventRsvps.title}
                                 </h2>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                    {new Date(selectedEventRsvps.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                    {new Date(selectedEventRsvps.startTime).toLocaleString([], {
+                                        weekday: 'short', month: 'short', day: 'numeric',
+                                        hour: 'numeric', minute: '2-digit',
+                                        ...(selectedEventRsvps.timezone && { timeZone: selectedEventRsvps.timezone }),
+                                    })}
+                                    {selectedEventRsvps.timezoneLabel && (
+                                        <span style={{ color: 'var(--text-tertiary)' }}> {selectedEventRsvps.timezoneLabel}</span>
+                                    )}
                                 </p>
-                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                {/* Flag when the event's zone differs from the viewer's, so a
+                                    travelling family isn't caught out by a local-time assumption. */}
+                                {selectedEventRsvps.timezone &&
+                                    selectedEventRsvps.timezone !== Intl.DateTimeFormat().resolvedOptions().timeZone && (
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--warning-400)', marginTop: '0.2rem' }}>
+                                        {new Date(selectedEventRsvps.startTime).toLocaleString([], {
+                                            hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric',
+                                        })} your time
+                                    </p>
+                                )}
+                                {/* Location with a one-tap directions link when a venue is set. */}
+                                {(selectedEventRsvps.venueName || selectedEventRsvps.location) && (
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', marginTop: '0.4rem' }}>
+                                        <MapPin size={14} color="var(--text-tertiary)" style={{ flexShrink: 0, marginTop: 2 }} />
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', minWidth: 0 }}>
+                                            <div>{selectedEventRsvps.venueName ?? selectedEventRsvps.location}</div>
+                                            {selectedEventRsvps.venueAddress && (
+                                                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
+                                                    {selectedEventRsvps.venueAddress}
+                                                </div>
+                                            )}
+                                            {selectedEventRsvps.venueNotes && (
+                                                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontStyle: 'italic' }}>
+                                                    {selectedEventRsvps.venueNotes}
+                                                </div>
+                                            )}
+                                            {selectedEventRsvps.directionsUrl && (
+                                                <a
+                                                    href={selectedEventRsvps.directionsUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                                                        marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--primary-400)',
+                                                        textDecoration: 'none', fontWeight: 600,
+                                                    }}
+                                                >
+                                                    <Navigation size={12} /> Directions
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
                                     <span className={`badge ${TYPE_BADGE_CLASS[selectedEventRsvps.type] || 'badge-neutral'}`}>
                                         {selectedEventRsvps.type}
                                     </span>
+                                    {selectedEventRsvps.seriesId && (
+                                        <span className="badge badge-neutral">REPEATS</span>
+                                    )}
                                     {selectedEventRsvps.isCancelled && (
                                         <span className="badge" style={{ background: 'var(--danger-400)20', color: 'var(--danger-400)' }}>
                                             CANCELLED
@@ -743,16 +974,43 @@ export default function SchedulePage() {
                                 </div>
                             )}
 
-                            {/* Staff cancel action */}
-                            {isStaff && !selectedEventRsvps.isCancelled && (
-                                <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--surface-600)' }}>
-                                    <button
-                                        className="btn btn-danger"
-                                        onClick={handleCancelEvent}
-                                        style={{ width: '100%' }}
-                                    >
-                                        Cancel Event
-                                    </button>
+                            {/* Staff cancel and delete actions */}
+                            {isStaff && (
+                                <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--surface-600)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {!selectedEventRsvps.isCancelled && (
+                                        <button className="btn btn-danger" onClick={handleCancelEvent} style={{ width: '100%' }}>
+                                            Cancel Event
+                                        </button>
+                                    )}
+
+                                    {/* A recurring event needs an explicit choice between this date
+                                        and the whole series; a one-off just deletes. */}
+                                    {selectedEventRsvps.seriesId ? (
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button
+                                                className="btn btn-ghost btn-sm"
+                                                style={{ flex: 1 }}
+                                                onClick={() => deleteEvent(selectedEventRsvps, 'THIS')}
+                                            >
+                                                <Trash2 size={14} /> Delete this date
+                                            </button>
+                                            <button
+                                                className="btn btn-ghost btn-sm"
+                                                style={{ flex: 1, color: 'var(--danger-400)' }}
+                                                onClick={() => deleteEvent(selectedEventRsvps, 'ALL')}
+                                            >
+                                                <Trash2 size={14} /> Delete whole series
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ width: '100%' }}
+                                            onClick={() => deleteEvent(selectedEventRsvps, 'THIS')}
+                                        >
+                                            <Trash2 size={14} /> Delete event
+                                        </button>
+                                    )}
                                 </div>
                             )}
 
@@ -883,7 +1141,7 @@ export default function SchedulePage() {
                             {/* Tabs */}
                             {isStaff && !selectedEventRsvps.isCancelled && (
                                 <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--surface-600)' }}>
-                                    {(['rsvps', 'attendance', 'volunteers'] as const).map((tab) => (
+                                    {(['rsvps', 'attendance', 'volunteers', 'duties'] as const).map((tab) => (
                                         <button
                                             key={tab}
                                             onClick={() => setEventModalTab(tab)}
@@ -900,14 +1158,23 @@ export default function SchedulePage() {
                                                 textTransform: 'capitalize',
                                             }}
                                         >
-                                            {tab === 'volunteers' ? 'Snacks' : tab}
+                                            {tab === 'volunteers' ? 'Snacks' : tab === 'duties' ? 'Duties' : tab}
                                         </button>
                                     ))}
                                 </div>
                             )}
 
+                            {/* Duties tab: scorekeeper, referee, setup and so on. */}
+                            {eventModalTab === 'duties' && isStaff && !selectedEventRsvps.isCancelled && (
+                                <AssignmentsPanel
+                                    eventId={selectedEventRsvps.id}
+                                    teamId={selectedEventRsvps.teamId ?? ''}
+                                    isStaff={isStaff}
+                                />
+                            )}
+
                             {/* RSVPs tab */}
-                            {(eventModalTab === 'rsvps' || !isStaff || selectedEventRsvps.isCancelled) && (
+                            {(eventModalTab === 'rsvps' || (!isStaff && eventModalTab !== 'duties') || selectedEventRsvps.isCancelled) && (
                                 <>
                                     <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Team RSVPs</h3>
                                     {loadingRsvps ? (

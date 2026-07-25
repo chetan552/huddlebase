@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 import { isApprovedCoachOrAdmin } from '@/lib/permissions';
+import { isValidTimeZone, DEFAULT_TIMEZONE } from '@/lib/timezone';
 
 export async function GET(req: NextRequest) {
     try {
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
                 sport: t.sport,
                 season: t.season,
                 color: t.color,
+                timezone: t.timezone,
                 logo: t.logo,
                 memberCount: t._count.members,
                 upcomingEvents: t._count.events,
@@ -58,10 +60,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Coach approval is required to create teams' }, { status: 403 });
         }
 
-        const { name, sport, season, color } = await req.json();
+        const { name, sport, season, color, timezone } = await req.json();
 
         if (!name || !sport) {
             return NextResponse.json({ success: false, error: 'Name and sport are required' }, { status: 400 });
+        }
+        if (timezone && !isValidTimeZone(timezone)) {
+            return NextResponse.json({ success: false, error: 'Invalid timezone' }, { status: 400 });
         }
 
         const team = await prisma.team.create({
@@ -70,6 +75,9 @@ export async function POST(req: NextRequest) {
                 sport,
                 season: season || null,
                 color: color || '#3b82f6',
+                // Event times are authored against this zone, so default to the
+                // creator's browser zone rather than the server's.
+                timezone: timezone || DEFAULT_TIMEZONE,
                 members: {
                     create: {
                         userId: user.id,

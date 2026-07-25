@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardList,
   MessageCircle, CreditCard, Settings, Bell, Zap,
   BarChart3, Sparkles, Menu, LogOut, ChevronLeft, X, Sun, Moon,
-  ShieldCheck,
+  ShieldCheck, Image as ImageIcon, CalendarClock, Folder, Trophy, FileText,
 } from 'lucide-react';
 
 interface Notification {
@@ -30,6 +30,11 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   '/schedule':  <Calendar       size={18} strokeWidth={1.75} />,
   '/roster':    <ClipboardList  size={18} strokeWidth={1.75} />,
   '/chat':      <MessageCircle  size={18} strokeWidth={1.75} />,
+  '/media':     <ImageIcon      size={18} strokeWidth={1.75} />,
+  '/files':     <Folder         size={18} strokeWidth={1.75} />,
+  '/availability': <CalendarClock size={18} strokeWidth={1.75} />,
+  '/standings': <Trophy         size={18} strokeWidth={1.75} />,
+  '/registration': <FileText    size={18} strokeWidth={1.75} />,
   '/payments':  <CreditCard     size={18} strokeWidth={1.75} />,
   '/analytics':     <BarChart3  size={18} strokeWidth={1.75} />,
   '/practice-plan': <Sparkles  size={18} strokeWidth={1.75} />,
